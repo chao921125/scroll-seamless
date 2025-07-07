@@ -1,8 +1,8 @@
 # scroll-seamless
 
-[English](./README.en.md) | 中文文档
-
 A zero-dependency, seamless scroll library supporting JS, Vue, and React. Suitable for marquees, bulletins, news, and more.
+
+English | [中文文档](./README.md)
 
 ---
 
