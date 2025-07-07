@@ -3,12 +3,12 @@ import type { ForwardedRef, ReactNode } from 'react';
 import type { ScrollSeamlessOptions } from '../types';
 import { ScrollSeamless as ScrollSeamlessCore } from '../core';
 
-export interface SeamlessScrollProps extends ScrollSeamlessOptions {
+export interface ScrollSeamlessProps extends ScrollSeamlessOptions {
   children?: ReactNode;
   running?: boolean;
 }
 
-export interface SeamlessScrollRef {
+export interface ScrollSeamlessRef {
   start: () => void;
   stop: () => void;
   destroy: () => void;
@@ -17,9 +17,9 @@ export interface SeamlessScrollRef {
   isRunning: () => boolean | undefined;
 }
 
-const SeamlessScrollComponent = (
-  props: SeamlessScrollProps,
-  ref: ForwardedRef<SeamlessScrollRef>
+const ScrollSeamlessComponent = (
+  props: ScrollSeamlessProps,
+  ref: ForwardedRef<ScrollSeamlessRef>
 ) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ScrollSeamlessCore | null>(null);
@@ -66,5 +66,5 @@ const SeamlessScrollComponent = (
   );
 };
 
-export const SeamlessScroll = forwardRef(SeamlessScrollComponent);
-export default SeamlessScroll; 
+export const ScrollSeamless = forwardRef(ScrollSeamlessComponent);
+export default ScrollSeamless; 

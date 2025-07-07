@@ -9,7 +9,7 @@ import { defineComponent, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ScrollSeamless } from '../core';
 
 export default defineComponent({
-  name: 'SeamlessScrollVue',
+  name: 'ScrollSeamlessVue',
   props: {
     data: {
       type: Array,

@@ -41,11 +41,11 @@ pnpm add seamless-scroll
 
 ### 1. JS/TS
 ```js
-import { SeamlessScroll } from 'seamless-scroll';
+import { ScrollSeamless } from 'seamless-scroll';
 // 本库不包含任何样式限制，如需样式请自行添加
 
 const container = document.getElementById('scroll-box');
-const scroll = new SeamlessScroll(container, {
+const scroll = new ScrollSeamless(container, {
   data: ['消息1', '消息2', '消息3'],
   direction: 'horizontal',
   step: 1,
@@ -74,7 +74,7 @@ timer = setTimeout(() => {
 <script src="dist/seamless-scroll.umd.js"></script>
 <script>
   const container = document.getElementById('scroll-container');
-  const scroll = new window.SeamlessScroll(container, {
+  const scroll = new window.ScrollSeamless(container, {
     data: ['无缝', '滚动', '示例', 'Seamless', 'Scroll', 'Demo'],
     direction: 'horizontal',
     step: 1,
@@ -87,7 +87,7 @@ timer = setTimeout(() => {
 ```vue
 <template>
   <div style="width: 400px; height: 40px; border: 1px solid #ccc;">
-    <SeamlessScrollVue
+    <ScrollSeamlessVue
       :data="items"
       direction="horizontal"
       :step="1"
@@ -100,13 +100,13 @@ timer = setTimeout(() => {
       <template #default>
         <span v-for="item in items" :key="item" style="margin: 0 8px;">{{ item }}</span>
       </template>
-    </SeamlessScrollVue>
+    </ScrollSeamlessVue>
   </div>
   <button @click="updateData">更新数据</button>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import SeamlessScrollVue from 'seamless-scroll/vue';
+import ScrollSeamlessVue from 'seamless-scroll/vue';
 const items = ref(['无缝', '滚动', '示例', 'Seamless', 'Scroll', 'Demo']);
 const scrollRef = ref();
 function updateData() {
@@ -118,7 +118,7 @@ function updateData() {
 ### 3. React 组件
 ```jsx
 import React, { useRef, useState } from 'react';
-import SeamlessScroll from 'seamless-scroll/react';
+import ScrollSeamless from 'seamless-scroll/react';
 
 export default function Demo() {
   const [items, setItems] = useState(['无缝', '滚动', '示例', 'Seamless', 'Scroll', 'Demo']);
@@ -127,7 +127,7 @@ export default function Demo() {
   return (
     <div>
       <div style={{ width: 400, height: 40, border: '1px solid #ccc' }}>
-        <SeamlessScroll
+        <ScrollSeamless
           ref={scrollRef}
           data={items}
           direction="horizontal"
@@ -140,7 +140,7 @@ export default function Demo() {
           {items.map(item => (
             <span key={item} style={{ margin: '0 8px' }}>{item}</span>
           ))}
-        </SeamlessScroll>
+        </ScrollSeamless>
       </div>
       <button onClick={updateData}>更新数据</button>
     </div>
@@ -150,7 +150,7 @@ export default function Demo() {
 
 ### 4. require 方式
 ```js
-const { SeamlessScroll } = require('seamless-scroll');
+const { ScrollSeamless } = require('seamless-scroll');
 ```
 
 ---

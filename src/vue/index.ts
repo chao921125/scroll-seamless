@@ -1,4 +1,4 @@
-import SeamlessScroll from './SeamlessScroll.vue';
-export { SeamlessScroll };
+import ScrollSeamless from './SeamlessScroll.vue';
+export { ScrollSeamless };
 export type { ScrollSeamlessOptions } from '../types';
-export default SeamlessScroll; 
+export default ScrollSeamless; 
