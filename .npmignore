@@ -1,0 +1,10 @@
+test/
+node_modules/
+*.log
+*.tsbuildinfo
+*.swp
+coverage/
+.git
+.gitignore
+.vscode
+.env 

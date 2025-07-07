@@ -1,0 +1,85 @@
+{
+  "name": "seamless-scroll",
+  "version": "1.0.0",
+  "description": "A seamless scroll library for JS, Vue, and React.",
+	"keywords": [
+    "seamless",
+    "scroll",
+    "marquee",
+    "vue",
+    "react",
+    "typescript"
+	],
+	"homepage": "https://github.com/chao921125/seamless-scroll",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/chao921125/seamless-scroll.git"
+	},
+	"bugs": {
+		"url": "https://github.com/chao921125/seamless-scroll/issues"
+	},
+	"author": {
+		"name": "chao921125",
+		"email": "chao921125@sina.com",
+		"url": "https://github.com/chao921125"
+	},
+	"license": "BSD-3-Clause",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+	"scripts": {
+    "build": "tsc && rollup -c",
+    "prepublishOnly": "npm run build"
+	},
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/test/**/*.test.ts"]
+  },
+	"dependencies": {},
+	"devDependencies": {
+    "typescript": "^5.0.0",
+    "rollup": "^4.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "rollup-plugin-dts": "^6.1.0"
+  },
+	"peerDependencies": {},
+	"overrides": {},
+	"engines": {
+		"node": ">=14.0.0",
+		"npm": ">=6.14.18",
+		"yarn": ">=3.0.0"
+	},
+	"browserslist": [
+		"defaults",
+		"> 1%",
+		"not dead",
+		"not op_mini all",
+		"last 2 versions",
+		"Chrome > 51",
+		"Edge > 15",
+		"Firefox > 54",
+		"Safari > 10",
+		"not IE <= 11",
+		"Android >= 6.0",
+		"iOS > 10",
+		"supports es6-module"
+	],
+	"publishConfig": {
+		"access": "public"
+	}
+}
