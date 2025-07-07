@@ -25,9 +25,19 @@ export default [
     ],
     plugins:
       pkg === 'vue'
-        ? [resolve(), vue(), postcss(), commonjs(), typescript({ declaration: false })]
+        ? [
+            resolve(),
+            vue({
+              target: 'browser',
+              preprocessStyles: true,
+              css: true
+            }),
+            postcss(),
+            commonjs(),
+            typescript({ declaration: false })
+          ]
         : [resolve(), commonjs(), typescript({ declaration: false })],
-    external: [] // 可根据需要配置外部依赖
+    external: pkg === 'vue' ? ['vue'] : []
   })),
   // 只为 types 打包类型声明
   {

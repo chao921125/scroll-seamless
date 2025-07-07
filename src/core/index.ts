@@ -85,8 +85,13 @@ export class ScrollSeamless implements ScrollSeamlessController {
     this.content1.style.position = this.content2.style.position = 'absolute';
     this.content1.style.top = this.content2.style.top = '0';
     this.content1.style.left = this.content2.style.left = '0';
-    this.content1.style.whiteSpace = this.content2.style.whiteSpace = this.options.direction === 'horizontal' ? 'nowrap' : 'normal';
-    this.content1.style.display = this.content2.style.display = this.options.singleLine ? 'inline-block' : 'block';
+    if (this.options.direction === 'horizontal') {
+      this.content1.style.display = this.content2.style.display = 'inline-block';
+      this.content1.style.whiteSpace = this.content2.style.whiteSpace = 'nowrap';
+    } else {
+      this.content1.style.display = this.content2.style.display = 'block';
+      this.content1.style.whiteSpace = this.content2.style.whiteSpace = 'normal';
+    }
   }
 
   /**

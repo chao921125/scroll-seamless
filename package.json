@@ -1,6 +1,6 @@
 {
 	"name": "scroll-seamless",
-	"version": "1.0.3",
+	"version": "1.0.9",
 	"description": "A seamless scroll library for JS, Vue, and React.",
 	"keywords": [
 		"seamless",
@@ -38,10 +38,30 @@
 			"import": "./dist/index.esm.js",
 			"require": "./dist/index.cjs.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./vue": {
+			"import": "./dist/vue/index.esm.js",
+			"require": "./dist/vue/index.cjs.js",
+			"types": "./dist/vue/index.d.ts"
+		},
+		"./react": {
+			"import": "./dist/react/index.esm.js",
+			"require": "./dist/react/index.cjs.js",
+			"types": "./dist/react/index.d.ts"
+		},
+		"./core": {
+			"import": "./dist/core/index.esm.js",
+			"require": "./dist/core/index.cjs.js",
+			"types": "./dist/core/index.d.ts"
+		},
+		"./types": {
+			"import": "./dist/types/index.d.ts",
+			"require": "./dist/types/index.d.ts",
+			"types": "./dist/types/index.d.ts"
 		}
 	},
 	"scripts": {
-		"build": "tsc && rollup -c",
+		"build": "tsc && rollup -c && cp dist/vue/index.esm.js dist/vue/index.js",
 		"prepublishOnly": "npm run build",
 		"test:unit": "vitest run"
 	},

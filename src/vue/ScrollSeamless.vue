@@ -1,6 +1,11 @@
 <template>
   <div ref="rootRef" class="scroll-seamless-vue">
-    <slot />
+    <div
+      class="scroll-seamless-content"
+      :class="props.direction"
+    >
+      <slot />
+    </div>
   </div>
 </template>
 
@@ -100,7 +105,8 @@ export default defineComponent({
     });
 
     return {
-      rootRef
+      rootRef,
+      props
     };
   }
 });
@@ -112,5 +118,16 @@ export default defineComponent({
   height: 100%;
   overflow: hidden;
   position: relative;
+}
+.scroll-seamless-content.horizontal {
+  display: flex;
+  flex-direction: row;
+  white-space: nowrap;
+}
+.scroll-seamless-content.vertical {
+  display: block;
+}
+.scroll-seamless-content.horizontal > * {
+  display: inline-block;
 }
 </style> 
