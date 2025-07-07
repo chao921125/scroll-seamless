@@ -1,4 +1,4 @@
-# seamless-scroll API Documentation
+# scroll-seamless API Documentation
 
 ## Parameters
 | Name | Type | Description | Default |

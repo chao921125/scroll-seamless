@@ -1,6 +1,6 @@
 // 示例：如何在浏览器中使用 SeamlessScroll
 // 假设已通过 <script> 标签引入打包后的 JS 文件
-// 或通过 npm 安装并打包到 dist/seamless-scroll.js
+// 或通过 npm 安装并打包到 dist/scroll-seamless.js
 
 // HTML:
 // <div id="scroll-container" style="width: 400px; height: 40px; border: 1px solid #ccc;"></div>

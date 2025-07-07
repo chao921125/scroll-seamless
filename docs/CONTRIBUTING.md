@@ -1,6 +1,6 @@
 # 贡献指南
 
-欢迎参与 seamless-scroll 的开发与维护！
+欢迎参与 scroll-seamless 的开发与维护！
 
 ## 如何参与
 1. Fork 本仓库

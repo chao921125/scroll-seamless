@@ -1,6 +1,6 @@
 {
 	"name": "scroll-seamless",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "A seamless scroll library for JS, Vue, and React.",
 	"keywords": [
 		"seamless",

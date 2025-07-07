@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootRef" class="seamless-scroll-vue">
+  <div ref="rootRef" class="scroll-seamless-vue">
     <slot />
   </div>
 </template>
@@ -107,7 +107,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.seamless-scroll-vue {
+.scroll-seamless-vue {
   width: 100%;
   height: 100%;
   overflow: hidden;

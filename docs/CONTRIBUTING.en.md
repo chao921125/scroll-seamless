@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Welcome to contribute to seamless-scroll!
+Welcome to contribute to scroll-seamless!
 
 ## How to Contribute
 1. Fork this repository

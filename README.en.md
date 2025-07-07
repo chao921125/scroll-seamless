@@ -1,4 +1,4 @@
-# seamless-scroll
+# scroll-seamless
 
 [中文文档](./README.md) | English
 
@@ -28,11 +28,11 @@ A zero-dependency seamless scroll library for JS, Vue, and React. Suitable for m
 
 ## 🚀 Installation
 ```sh
-npm install seamless-scroll
+npm install scroll-seamless
 # or
-yarn add seamless-scroll
+yarn add scroll-seamless
 # or
-pnpm add seamless-scroll
+pnpm add scroll-seamless
 ```
 
 ---
@@ -41,7 +41,7 @@ pnpm add seamless-scroll
 
 ### 1. JS/TS
 ```js
-import { ScrollSeamless } from 'seamless-scroll';
+import { ScrollSeamless } from 'scroll-seamless';
 // No built-in style, add your own if needed
 
 const container = document.getElementById('scroll-box');
@@ -71,7 +71,7 @@ setTimeout(() => {
 ```html
 <!-- No built-in style, add your own if needed -->
 <div id="scroll-container" style="width:400px;height:40px;"></div>
-<script src="dist/seamless-scroll.umd.js"></script>
+<script src="dist/scroll-seamless.umd.js"></script>
 <script>
   const container = document.getElementById('scroll-container');
   const scroll = new window.ScrollSeamless(container, {
@@ -106,7 +106,7 @@ setTimeout(() => {
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import ScrollSeamlessVue from 'seamless-scroll/vue';
+import ScrollSeamlessVue from 'scroll-seamless/vue';
 const items = ref(['Seamless', 'Scroll', 'Demo']);
 const scrollRef = ref();
 function updateData() {
@@ -118,7 +118,7 @@ function updateData() {
 ### 3. React Component
 ```jsx
 import React, { useRef, useState } from 'react';
-import ScrollSeamless from 'seamless-scroll/react';
+import ScrollSeamless from 'scroll-seamless/react';
 
 export default function Demo() {
   const [items, setItems] = useState(['Seamless', 'Scroll', 'Demo']);
@@ -150,15 +150,15 @@ export default function Demo() {
 
 ### 4. require usage
 ```js
-const { ScrollSeamless } = require('seamless-scroll');
+const { ScrollSeamless } = require('scroll-seamless');
 ```
 
 ---
 
 ## 🧩 More Examples
-- [examples/seamless-scroll-demo.js](examples/seamless-scroll-demo.js)
-- [examples/seamless-scroll-vue-demo.vue](examples/seamless-scroll-vue-demo.vue)
-- [examples/seamless-scroll-react-demo.jsx](examples/seamless-scroll-react-demo.jsx)
+- [examples/scroll-seamless-demo.js](examples/scroll-seamless-demo.js)
+- [examples/scroll-seamless-vue-demo.vue](examples/scroll-seamless-vue-demo.vue)
+- [examples/scroll-seamless-react-demo.jsx](examples/scroll-seamless-react-demo.jsx)
 
 ---
 

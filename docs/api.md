@@ -1,4 +1,4 @@
-# seamless-scroll API 文档
+# scroll-seamless API 文档
 
 ## 参数说明
 | 参数 | 类型 | 说明 | 默认值 |
