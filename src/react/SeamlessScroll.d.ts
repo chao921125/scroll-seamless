@@ -1,5 +1,5 @@
 import type { ForwardRefExoticComponent, RefAttributes, ReactNode } from 'react';
-import type { SeamlessScrollOptions } from '../../types';
+import type { SeamlessScrollOptions } from '../types';
 
 export interface SeamlessScrollProps extends SeamlessScrollOptions {
   children?: ReactNode;

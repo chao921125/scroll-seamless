@@ -1,13 +1,16 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import dts from 'rollup-plugin-dts';
+import typescript from '@rollup/plugin-typescript';
+import vue from 'rollup-plugin-vue';
+import postcss from 'rollup-plugin-postcss';
 
 const packages = ['core', 'vue', 'react'];
 
 export default [
   // JS/TS 打包
   ...packages.map(pkg => ({
-    input: `${pkg}/index.ts`,
+    input: `src/${pkg}/index.ts`,
     output: [
       {
         file: `dist/${pkg}/index.esm.js`,
@@ -20,13 +23,16 @@ export default [
         sourcemap: true
       }
     ],
-    plugins: [resolve(), commonjs()],
+    plugins:
+      pkg === 'vue'
+        ? [resolve(), vue(), postcss(), commonjs(), typescript({ declaration: false })]
+        : [resolve(), commonjs(), typescript({ declaration: false })],
     external: [] // 可根据需要配置外部依赖
   })),
-  // 类型声明打包
-  ...packages.map(pkg => ({
-    input: `${pkg}/index.d.ts`,
-    output: [{ file: `dist/${pkg}/index.d.ts`, format: 'es' }],
+  // 只为 types 打包类型声明
+  {
+    input: 'src/types/index.d.ts',
+    output: [{ file: 'dist/types/index.d.ts', format: 'es' }],
     plugins: [dts()]
-  }))
+  }
 ];

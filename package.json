@@ -1,22 +1,22 @@
 {
-  "name": "seamless-scroll",
-  "version": "1.0.0",
-  "description": "A seamless scroll library for JS, Vue, and React.",
+	"name": "scroll-seamless",
+	"version": "1.0.0",
+	"description": "A seamless scroll library for JS, Vue, and React.",
 	"keywords": [
-    "seamless",
-    "scroll",
-    "marquee",
-    "vue",
-    "react",
-    "typescript"
+		"seamless",
+		"scroll",
+		"marquee",
+		"vue",
+		"react",
+		"typescript"
 	],
-	"homepage": "https://github.com/chao921125/seamless-scroll",
+	"homepage": "https://github.com/chao921125/scroll-seamless",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/chao921125/seamless-scroll.git"
+		"url": "https://github.com/chao921125/scroll-seamless.git"
 	},
 	"bugs": {
-		"url": "https://github.com/chao921125/seamless-scroll/issues"
+		"url": "https://github.com/chao921125/scroll-seamless/issues"
 	},
 	"author": {
 		"name": "chao921125",
@@ -24,40 +24,74 @@
 		"url": "https://github.com/chao921125"
 	},
 	"license": "BSD-3-Clause",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "docs",
-    "README.md",
-    "LICENSE"
-  ],
-  "exports": {
-    ".": {
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-	"scripts": {
-    "build": "tsc && rollup -c",
-    "prepublishOnly": "npm run build"
+	"main": "dist/index.cjs.js",
+	"module": "dist/index.esm.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist",
+		"docs",
+		"README.md",
+		"LICENSE"
+	],
+	"exports": {
+		".": {
+			"import": "./dist/index.esm.js",
+			"require": "./dist/index.cjs.js",
+			"types": "./dist/index.d.ts"
+		}
 	},
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "testMatch": ["**/test/**/*.test.ts"]
-  },
-	"dependencies": {},
+	"scripts": {
+		"build": "tsc && rollup -c",
+		"prepublishOnly": "npm run build",
+		"test:unit": "vitest run"
+	},
+	"jest": {
+		"preset": "ts-jest",
+		"testEnvironment": "node",
+		"testMatch": [
+			"**/test/**/*.test.ts"
+		],
+		"moduleFileExtensions": [
+			"js",
+			"ts",
+			"json",
+			"vue"
+		],
+		"transform": {
+			"^.+\\.vue$": "vue-jest",
+			"^.+\\.ts$": "ts-jest"
+		}
+	},
 	"devDependencies": {
-    "typescript": "^5.0.0",
-    "rollup": "^4.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-commonjs": "^25.0.0",
-    "rollup-plugin-dts": "^6.1.0"
-  },
-	"peerDependencies": {},
+		"@rollup/plugin-commonjs": "^25.0.0",
+		"@rollup/plugin-node-resolve": "^15.0.0",
+		"@rollup/plugin-typescript": "^12.1.4",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/react": "^16.3.0",
+		"@types/jest": "^30.0.0",
+		"@types/react": "^19.1.8",
+		"@types/react-dom": "^19.1.6",
+		"@types/vue": "^2.0.0",
+		"@vitejs/plugin-vue": "^6.0.0",
+		"@vitest/ui": "^3.2.4",
+		"@vue/compiler-sfc": "^3.5.17",
+		"@vue/test-utils": "^2.4.6",
+		"jest": "^30.0.4",
+		"jsdom": "^26.1.0",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"rollup": "^4.0.0",
+		"rollup-plugin-dts": "^6.1.0",
+		"rollup-plugin-postcss": "^4.0.2",
+		"rollup-plugin-vue": "^6.0.0",
+		"ts-jest": "^29.4.0",
+		"tslib": "^2.8.1",
+		"typescript": "^5.0.0",
+		"vitest": "^3.2.4",
+		"vue": "^3.5.17",
+		"vue-jest": "5.0.0-alpha.10",
+		"vue-tsc": "^3.0.1"
+	},
 	"overrides": {},
 	"engines": {
 		"node": ">=14.0.0",

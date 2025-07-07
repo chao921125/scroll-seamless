@@ -7,7 +7,8 @@ describe('SeamlessScroll (React)', () => {
     render(
       <SeamlessScroll data={['A', 'B', 'C']} direction="horizontal" />
     );
-    expect(screen.getByText('A')).toBeInTheDocument();
+    const itemsA = screen.getAllByText('A');
+    expect(itemsA.length).toBeGreaterThanOrEqual(1);
   });
 
   it('支持数据更新', () => {
@@ -15,7 +16,8 @@ describe('SeamlessScroll (React)', () => {
       <SeamlessScroll data={['A', 'B', 'C']} direction="horizontal" />
     );
     rerender(<SeamlessScroll data={['X', 'Y']} direction="horizontal" />);
-    expect(screen.getByText('X')).toBeInTheDocument();
+    const itemsX = screen.getAllByText('X');
+    expect(itemsX.length).toBeGreaterThanOrEqual(1);
   });
 
   it('ref 支持方法调用', () => {

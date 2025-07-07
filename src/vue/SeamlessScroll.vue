@@ -4,48 +4,105 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, defineProps, defineExpose } from 'vue';
-import type { SeamlessScrollOptions } from '../../types';
-import { SeamlessScroll } from '../../core';
+<script>
+import { defineComponent, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { SeamlessScroll } from '../core';
 
-const props = defineProps<SeamlessScrollOptions & {
-  modelValue?: boolean
-}>();
-
-const rootRef = ref<HTMLElement | null>(null);
-let instance: SeamlessScroll | null = null;
-
-const start = () => instance?.start();
-const stop = () => instance?.stop();
-const destroy = () => instance?.destroy();
-const updateData = (data: string[]) => instance?.updateData(data);
-const setOptions = (options: Partial<SeamlessScrollOptions>) => instance?.setOptions(options);
-const isRunning = () => instance?.isRunning();
-
-defineExpose({ start, stop, destroy, updateData, setOptions, isRunning });
-
-onMounted(() => {
-  if (rootRef.value) {
-    instance = new SeamlessScroll(rootRef.value, props);
-    if (props.modelValue === false) {
-      instance.stop();
+export default defineComponent({
+  name: 'SeamlessScrollVue',
+  props: {
+    data: {
+      type: Array,
+      required: true
+    },
+    direction: {
+      type: String,
+      default: 'horizontal'
+    },
+    minCountToScroll: {
+      type: Number,
+      default: 2
+    },
+    step: {
+      type: Number,
+      default: 1
+    },
+    stepWait: {
+      type: Number,
+      default: 0
+    },
+    delay: {
+      type: Number,
+      default: 0
+    },
+    bezier: {
+      type: Array,
+      default: () => [0.25, 0.1, 0.25, 1]
+    },
+    hoverStop: {
+      type: Boolean,
+      default: true
+    },
+    wheelEnable: {
+      type: Boolean,
+      default: false
+    },
+    singleLine: {
+      type: Boolean,
+      default: false
+    },
+    modelValue: {
+      type: Boolean,
+      default: undefined
     }
+  },
+  emits: [],
+  setup(props, { expose }) {
+    const rootRef = ref(null);
+    /** @type {SeamlessScroll|null} */
+    let instance = null;
+
+    // 类型断言（JS环境下仅作注释）
+    const data = /** @type {string[]} */ (props.data);
+    const bezier = /** @type {[number, number, number, number]} */ (props.bezier);
+    const direction = /** @type {'horizontal' | 'vertical'} */ (props.direction);
+
+    const start = () => instance && instance.start();
+    const stop = () => instance && instance.stop();
+    const destroy = () => instance && instance.destroy();
+    const updateData = (data) => instance && instance.updateData(data);
+    const setOptions = (options) => instance && instance.setOptions(options);
+    const isRunning = () => instance && instance.isRunning();
+
+    expose({ start, stop, destroy, updateData, setOptions, isRunning });
+
+    onMounted(() => {
+      if (rootRef.value) {
+        instance = new SeamlessScroll(rootRef.value, { ...props, data, bezier, direction });
+        if (props.modelValue === false) {
+          instance.stop();
+        }
+      }
+    });
+
+    onBeforeUnmount(() => {
+      destroy();
+    });
+
+    watch(() => props.modelValue, (val) => {
+      if (!instance) return;
+      if (val) instance.start();
+      else instance.stop();
+    });
+
+    watch(() => props.data, (val) => {
+      if (instance) instance.updateData(/** @type {string[]} */ (val));
+    });
+
+    return {
+      rootRef
+    };
   }
-});
-
-onBeforeUnmount(() => {
-  destroy();
-});
-
-watch(() => props.modelValue, (val) => {
-  if (!instance) return;
-  if (val) instance.start();
-  else instance.stop();
-});
-
-watch(() => props.data, (val) => {
-  if (instance) instance.updateData(val);
 });
 </script>
 

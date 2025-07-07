@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils';
+import { describe, it, expect } from 'vitest';
 import SeamlessScrollVue from '../src/vue/SeamlessScroll.vue';
 import { nextTick } from 'vue';
 
@@ -22,7 +23,7 @@ describe('SeamlessScrollVue', () => {
     });
     await wrapper.setProps({ data: ['X', 'Y'] });
     await nextTick();
-    expect(wrapper.props('data')).toEqual(['X', 'Y']);
+    expect((wrapper.props() as any).data).toEqual(['X', 'Y']);
   });
 
   it('支持方法调用', async () => {

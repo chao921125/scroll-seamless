@@ -10,12 +10,14 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx"
   },
   "include": [
     "src/core/**/*",
     "src/vue/**/*",
     "src/react/**/*",
-    "src/types/**/*"
+    "src/types/**/*",
+    "shim.d.ts"
   ]
 }

@@ -1,8 +1,6 @@
-// 使用 jsdom 模拟 DOM 环境
+import { describe, it, expect } from 'vitest';
+import { SeamlessScroll } from '../src/core';
 const { JSDOM } = require('jsdom');
-
-// 假设 SeamlessScroll 已通过 require 或全局引入
-// const { SeamlessScroll } = require('../dist/seamless-scroll');
 
 // 这里只做伪代码示例，实际需根据打包后的导出方式调整
 
@@ -14,7 +12,7 @@ describe('SeamlessScroll', () => {
     document = window.document;
     container = document.getElementById('scroll');
     // 伪代码：实际需替换为正确的导入
-    scroll = new window.SeamlessScroll(container, {
+    scroll = new SeamlessScroll(container, {
       data: ['A', 'B', 'C'],
       direction: 'horizontal',
     });
