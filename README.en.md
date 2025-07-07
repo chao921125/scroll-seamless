@@ -2,6 +2,12 @@
 
 A zero-dependency, seamless scroll library supporting JS, Vue, and React. Suitable for marquees, bulletins, news, and more.
 
+
+[![npm version](https://img.shields.io/npm/v/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
+[![npm downloads](https://img.shields.io/npm/dm/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
+[![License](https://img.shields.io/npm/l/scroll-seamless.svg)](https://github.com/chao921125/scroll-seamless/blob/main/LICENSE)
+
+
 English | [中文文档](./README.md)
 
 ---
