@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import type { ForwardedRef, ReactNode } from 'react';
-import type { SeamlessScrollOptions } from '../types';
-import { SeamlessScroll as SeamlessScrollCore } from '../core';
+import type { ScrollSeamlessOptions } from '../types';
+import { ScrollSeamless as ScrollSeamlessCore } from '../core';
 
-export interface SeamlessScrollProps extends SeamlessScrollOptions {
+export interface SeamlessScrollProps extends ScrollSeamlessOptions {
   children?: ReactNode;
   running?: boolean;
 }
@@ -13,7 +13,7 @@ export interface SeamlessScrollRef {
   stop: () => void;
   destroy: () => void;
   updateData: (data: string[]) => void;
-  setOptions: (options: Partial<SeamlessScrollOptions>) => void;
+  setOptions: (options: Partial<ScrollSeamlessOptions>) => void;
   isRunning: () => boolean | undefined;
 }
 
@@ -22,7 +22,7 @@ const SeamlessScrollComponent = (
   ref: ForwardedRef<SeamlessScrollRef>
 ) => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const instanceRef = useRef<SeamlessScrollCore | null>(null);
+  const instanceRef = useRef<ScrollSeamlessCore | null>(null);
 
   useImperativeHandle(ref, () => ({
     start: () => instanceRef.current?.start(),
@@ -35,7 +35,7 @@ const SeamlessScrollComponent = (
 
   useEffect(() => {
     if (rootRef.current) {
-      instanceRef.current = new SeamlessScrollCore(rootRef.current, props);
+      instanceRef.current = new ScrollSeamlessCore(rootRef.current, props);
       if (props.running === false) {
         instanceRef.current.stop();
       }

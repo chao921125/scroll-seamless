@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { SeamlessScroll } from '../src/core';
+import { ScrollSeamless } from '../src/core';
 const { JSDOM } = require('jsdom');
 
 // 这里只做伪代码示例，实际需根据打包后的导出方式调整
 
-describe('SeamlessScroll', () => {
+describe('ScrollSeamless', () => {
   let window, document, container, scroll;
 
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('SeamlessScroll', () => {
     document = window.document;
     container = document.getElementById('scroll');
     // 伪代码：实际需替换为正确的导入
-    scroll = new SeamlessScroll(container, {
+    scroll = new ScrollSeamless(container, {
       data: ['A', 'B', 'C'],
       direction: 'horizontal',
     });

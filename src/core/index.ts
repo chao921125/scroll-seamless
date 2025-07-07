@@ -1,6 +1,6 @@
-import { SeamlessScrollOptions, SeamlessScrollController, ScrollDirection } from '../types';
+import { ScrollSeamlessOptions, ScrollSeamlessController, ScrollDirection } from '../types';
 
-const DEFAULT_OPTIONS: Required<Omit<SeamlessScrollOptions, 'data'>> = {
+const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
   direction: 'horizontal',
   minCountToScroll: 2,
   step: 1,
@@ -16,11 +16,11 @@ const DEFAULT_OPTIONS: Required<Omit<SeamlessScrollOptions, 'data'>> = {
  * 无缝滚动主类
  * @see https://github.com/chao921125/postcss-px-convert
  */
-export class SeamlessScroll implements SeamlessScrollController {
+export class ScrollSeamless implements ScrollSeamlessController {
   /** 滚动容器 */
   private container: HTMLElement;
   /** 配置项 */
-  private options: Required<SeamlessScrollOptions>;
+  private options: Required<ScrollSeamlessOptions>;
   /** 是否正在滚动 */
   private running = false;
   /** requestAnimationFrame id */
@@ -41,7 +41,7 @@ export class SeamlessScroll implements SeamlessScrollController {
    * @param container 滚动容器
    * @param options 配置项
    */
-  constructor(container: HTMLElement, options: SeamlessScrollOptions) {
+  constructor(container: HTMLElement, options: ScrollSeamlessOptions) {
     this.container = container;
     this.options = { ...DEFAULT_OPTIONS, ...options, data: options.data };
     this.init();
@@ -191,7 +191,7 @@ export class SeamlessScroll implements SeamlessScrollController {
    * 动态更新参数
    * @param options 新参数
    */
-  public setOptions(options: Partial<SeamlessScrollOptions>): void {
+  public setOptions(options: Partial<ScrollSeamlessOptions>): void {
     this.options = { ...this.options, ...options };
     this.setContent();
     this.layout();
@@ -252,4 +252,4 @@ export class SeamlessScroll implements SeamlessScrollController {
   }
 }
 
-export default SeamlessScroll;
+export default ScrollSeamless;

@@ -6,7 +6,7 @@ export type ScrollDirection = 'horizontal' | 'vertical';
 /**
  * 无缝滚动配置项
  */
-export interface SeamlessScrollOptions {
+export interface ScrollSeamlessOptions {
   /** 滚动内容 */
   data: string[];
   /** 滚动方向，默认 horizontal */
@@ -32,7 +32,7 @@ export interface SeamlessScrollOptions {
 /**
  * 无缝滚动控制器接口
  */
-export interface SeamlessScrollController {
+export interface ScrollSeamlessController {
   /** 启动滚动动画 */
   start(): void;
   /** 停止滚动动画 */
@@ -44,5 +44,5 @@ export interface SeamlessScrollController {
   /** 更新滚动数据 */
   updateData(data: string[]): void;
   /** 动态更新参数 */
-  setOptions(options: Partial<SeamlessScrollOptions>): void;
+  setOptions(options: Partial<ScrollSeamlessOptions>): void;
 }

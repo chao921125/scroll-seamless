@@ -6,7 +6,7 @@
 
 <script>
 import { defineComponent, ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { SeamlessScroll } from '../core';
+import { ScrollSeamless } from '../core';
 
 export default defineComponent({
   name: 'SeamlessScrollVue',
@@ -59,7 +59,7 @@ export default defineComponent({
   emits: [],
   setup(props, { expose }) {
     const rootRef = ref(null);
-    /** @type {SeamlessScroll|null} */
+    /** @type {ScrollSeamless|null} */
     let instance = null;
 
     // 类型断言（JS环境下仅作注释）
@@ -78,7 +78,7 @@ export default defineComponent({
 
     onMounted(() => {
       if (rootRef.value) {
-        instance = new SeamlessScroll(rootRef.value, { ...props, data, bezier, direction });
+        instance = new ScrollSeamless(rootRef.value, { ...props, data, bezier, direction });
         if (props.modelValue === false) {
           instance.stop();
         }
