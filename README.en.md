@@ -1,20 +1,20 @@
 # scroll-seamless
 
-[中文文档](./README.md) | English
+[English](./README.en.md) | 中文文档
 
-A zero-dependency seamless scroll library for JS, Vue, and React. Suitable for marquee, bulletin, news, etc.
+A zero-dependency, seamless scroll library supporting JS, Vue, and React. Suitable for marquees, bulletins, news, and more.
 
 ---
 
 ## ✨ Features
 - Zero dependency, lightweight
-- Support for JS, Vue3, React
-- Horizontal & vertical scroll
-- Hover stop, mouse wheel
-- Step, bezier, single line
-- **No built-in style, fully customizable**
+- Supports JS, Vue3, React
+- Horizontal/vertical scrolling
+- Pause on hover, mouse wheel support
+- Step, bezier curve, single-line mode
+- **No style restrictions, fully customizable**
 - TypeScript support
-- Extensible & maintainable
+- Extensible and easy to maintain
 
 ---
 
@@ -22,7 +22,7 @@ A zero-dependency seamless scroll library for JS, Vue, and React. Suitable for m
 - Multi-platform import: import, require, UMD
 - Common utility methods are extracted for reuse and extension
 - Complete test cases and rich examples
-- Entry file index.js/ts in root, all build outputs in dist/
+- Entry file index.js/ts in the root directory, all build outputs in dist/
 
 ---
 
@@ -42,8 +42,6 @@ pnpm add scroll-seamless
 ### 1. JS/TS
 ```js
 import { ScrollSeamless } from 'scroll-seamless';
-// No built-in style, add your own if needed
-
 const container = document.getElementById('scroll-box');
 const scroll = new ScrollSeamless(container, {
   data: ['Message 1', 'Message 2', 'Message 3'],
@@ -155,16 +153,23 @@ const { ScrollSeamless } = require('scroll-seamless');
 
 ---
 
-## 🧩 More Examples
-- [examples/scroll-seamless-demo.js](examples/scroll-seamless-demo.js)
-- [examples/scroll-seamless-vue-demo.vue](examples/scroll-seamless-vue-demo.vue)
-- [examples/scroll-seamless-react-demo.jsx](examples/scroll-seamless-react-demo.jsx)
+## 🧩 Examples
+- [JS Example](examples/scroll-seamless-demo.js)
+- [Vue Example](examples/scroll-seamless-vue-demo.vue)
+- [React Example](examples/scroll-seamless-react-demo.jsx)
 
 ---
 
-## 📖 [API Docs (English)](docs/api.en.md) | [API 文档](docs/api.md)
+## 📖  API
+- Supports horizontal and vertical scrolling, step, bezier curve, pause on hover, mouse wheel, dynamic data update, etc.
+- For detailed parameters and methods, see: [API Docs](docs/API.en.md)
 
-## 🤝 [Contributing Guide (English)](docs/CONTRIBUTING.en.md) | [贡献指南](docs/CONTRIBUTING.md)
+---
+
+## 🤝 Contributing Guide
+Please read [Contributing Guide](docs/CONTRIBUTING.en.md)
+
+---
 
 ## 🔒 Security Policy
 See [SECURITY.md](SECURITY.md)

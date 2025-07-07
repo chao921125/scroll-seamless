@@ -23,10 +23,14 @@
 - `setOptions(options)`: Update options
 
 ## Types
-- SeamlessScrollOptions: All parameter type definitions
-- SeamlessScrollController: All method type definitions
+- ScrollSeamlessOptions: All parameter type definitions
+- ScrollSeamlessController: All method type definitions
 
 ## Extensibility
 - Support for custom utility extensions
 - Support for custom styles
-- Multi-platform usage 
+- Multi-platform usage
+
+---
+
+For more examples and usage, please refer to the main documentation and examples directory. 

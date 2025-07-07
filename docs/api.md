@@ -23,10 +23,14 @@
 - `setOptions(options)`：动态更新参数
 
 ## 类型 Type
-- SeamlessScrollOptions：所有参数类型定义
-- SeamlessScrollController：所有方法类型定义
+- ScrollSeamlessOptions：所有参数类型定义
+- ScrollSeamlessController：所有方法类型定义
 
 ## 扩展性
 - 支持自定义工具方法扩展
 - 支持自定义样式
-- 支持多端调用 
+- 支持多端调用
+
+---
+
+如需更多示例和用法，请参考主文档和示例目录。 
