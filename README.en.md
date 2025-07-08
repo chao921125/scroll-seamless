@@ -131,8 +131,8 @@ export default function Demo() {
           hoverStop={true}
           wheelEnable={true}
         >
-          {items.map(item => (
-            <span key={item} style={{ margin: '0 8px' }}>{item}</span>
+          {items.map((item, idx) => (
+            <span key={idx} style={{ margin: '0 8px' }}>{item}</span>
           ))}
         </ScrollSeamless>
       </div>
