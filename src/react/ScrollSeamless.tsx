@@ -25,10 +25,10 @@ const ScrollSeamlessComponent = (
   const instanceRef = useRef<ScrollSeamlessCore | null>(null);
 
   useImperativeHandle(ref, () => ({
-    start: () => instanceRef.current?.start(),
-    stop: () => instanceRef.current?.stop(),
-    destroy: () => instanceRef.current?.destroy(),
-    updateData: (data) => instanceRef.current?.updateData(data),
+    start: () => instanceRef.current && instanceRef.current.start(),
+    stop: () => instanceRef.current && instanceRef.current.stop(),
+    destroy: () => instanceRef.current && instanceRef.current.destroy(),
+    updateData: () => instanceRef.current?.updateData(),
     setOptions: (options) => instanceRef.current?.setOptions(options),
     isRunning: () => instanceRef.current?.isRunning(),
   }), []);
@@ -54,8 +54,8 @@ const ScrollSeamlessComponent = (
   }, [props.running]);
 
   useEffect(() => {
-    if (instanceRef.current && props.data) {
-      instanceRef.current.updateData(props.data);
+    if (instanceRef.current) {
+      instanceRef.current.updateData();
     }
   }, [props.data]);
 

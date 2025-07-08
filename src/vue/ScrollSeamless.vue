@@ -1,16 +1,32 @@
 <template>
   <div ref="rootRef" class="scroll-seamless-vue">
-    <div
-      class="scroll-seamless-content"
-      :class="props.direction"
-    >
-      <slot />
+    <div class="scroll-seamless-content" :class="props.direction">
+      <div class="ss-content" :style="ssContentStyle">
+        <slot
+          v-for="(item, idx) in props.data"
+          :item="item"
+          :index="idx"
+          :key="idx"
+        >
+          <span class="ss-item">{{ item }}</span>
+        </slot>
+      </div>
+      <div class="ss-content" :style="ssContentStyle">
+        <slot
+          v-for="(item, idx) in props.data"
+          :item="item"
+          :index="idx"
+          :key="'copy-' + idx"
+        >
+          <span class="ss-item">{{ item }}</span>
+        </slot>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { defineComponent, ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import { ScrollSeamless } from '../core';
 
 export default defineComponent({
@@ -64,13 +80,24 @@ export default defineComponent({
   emits: [],
   setup(props, { expose }) {
     const rootRef = ref(null);
-    /** @type {ScrollSeamless|null} */
     let instance = null;
 
-    // 类型断言（JS环境下仅作注释）
-    const data = /** @type {string[]} */ (props.data);
-    const bezier = /** @type {[number, number, number, number]} */ (props.bezier);
-    const direction = /** @type {'horizontal' | 'vertical'} */ (props.direction);
+    // 横向时内容容器样式
+    const ssContentStyle = computed(() => {
+      if (props.direction === 'horizontal') {
+        return {
+          display: 'inline-block',
+          whiteSpace: 'nowrap',
+          verticalAlign: 'top',
+        };
+      }
+      return {};
+    });
+
+    // 直接用 props，无类型断言
+    const data = props.data;
+    const bezier = props.bezier;
+    const direction = props.direction;
 
     const start = () => instance && instance.start();
     const stop = () => instance && instance.stop();
@@ -101,12 +128,13 @@ export default defineComponent({
     });
 
     watch(() => props.data, (val) => {
-      if (instance) instance.updateData(/** @type {string[]} */ (val));
+      if (instance) instance.updateData(val);
     });
 
     return {
       rootRef,
-      props
+      props,
+      ssContentStyle,
     };
   }
 });
