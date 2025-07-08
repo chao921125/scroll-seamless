@@ -4,7 +4,7 @@
 | 参数 | 类型 | 说明 | 默认值 |
 | ---- | ---- | ---- | ------ |
 | data | string[] | 滚动内容 | 必填 |
-| direction | 'horizontal' | 'vertical' | 滚动方向 | 'horizontal' |
+| direction | 'horizontal' | 滚动方向 'vertical' | 'horizontal' |
 | minCountToScroll | number | 多少条数据开始滚动 | 2 |
 | step | number | 步进速度（像素/帧） | 1 |
 | stepWait | number | 单步停止等待时间(ms) | 0 |

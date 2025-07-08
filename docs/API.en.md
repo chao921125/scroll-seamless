@@ -4,7 +4,7 @@
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
 | data | string[] | Scroll content | required |
-| direction | 'horizontal' | 'vertical' | Scroll direction | 'horizontal' |
+| direction | 'horizontal' | Scroll direction 'vertical' | 'horizontal' |
 | minCountToScroll | number | Minimum items to scroll | 2 |
 | step | number | Step speed (px/frame) | 1 |
 | stepWait | number | Step wait time (ms) | 0 |
