@@ -63,10 +63,16 @@ const scroll = new ScrollSeamless(container, {
 ### 2. Vue 组件
 ```vue
 <template>
+  <!-- 兼容模式（默认，支持作用域插槽） -->
   <ScrollSeamlessVue :data="items" direction="horizontal">
-    <template #default>
-      <span v-for="item in items" :key="item">{{ item }}</span>
+    <template #default="{ item, index }">
+      <span>{{ item }}</span>
     </template>
+  </ScrollSeamlessVue>
+
+  <!-- 完全自定义模式（custom=true，slot 只渲染一次，用户可自定义结构） -->
+  <ScrollSeamlessVue :data="items" direction="horizontal" :custom="true">
+    <span v-for="item in items" :key="item">{{ item }}</span>
   </ScrollSeamlessVue>
 </template>
 <script setup lang="ts">

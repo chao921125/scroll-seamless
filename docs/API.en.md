@@ -13,6 +13,7 @@
 | hoverStop | boolean | Pause on hover | true |
 | wheelEnable | boolean | Mouse wheel | false |
 | singleLine | boolean | Single line horizontal scroll | false |
+| custom | boolean | Slot render mode, true for fully custom (slot rendered once, user controls structure), false for scoped slot compatible | false |
 
 ## Methods
 - `start()`: Start scrolling
@@ -34,3 +35,7 @@
 ---
 
 For more examples and usage, please refer to the main documentation and examples directory. 
+
+### Slot usage
+- Default (custom=false): slot supports scoped slot, #default="{ item, index }"
+- Fully custom (custom=true): slot rendered once, user can v-for or use any structure inside slot 

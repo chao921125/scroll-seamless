@@ -48,6 +48,14 @@ export class ScrollSeamless implements ScrollSeamlessController {
       this.content1.style.whiteSpace = this.content2.style.whiteSpace = 'normal';
     }
     this.layout();
+    // 恢复事件绑定
+    if (this.options.hoverStop) {
+      this.container.addEventListener('mouseenter', this.onMouseEnter);
+      this.container.addEventListener('mouseleave', this.onMouseLeave);
+    }
+    if (this.options.wheelEnable) {
+      this.container.addEventListener('wheel', this.onWheel, { passive: false });
+    }
     if (this.shouldScroll()) this.start();
   }
 
@@ -81,9 +89,43 @@ export class ScrollSeamless implements ScrollSeamlessController {
     this.frameId = null;
   }
 
+  private onMouseEnter = () => {
+    if (this.options.hoverStop) this.stop();
+  };
+  private onMouseLeave = () => {
+    if (this.options.hoverStop && this.shouldScroll()) this.start();
+  };
+  private onWheel = (e: WheelEvent) => {
+    if (!this.options.wheelEnable) return;
+    e.preventDefault();
+    this.position += e.deltaY || e.deltaX;
+    this.updatePosition();
+  };
+
+  private updatePosition() {
+    if (this.options.direction === 'horizontal') {
+      const width = this.content1.scrollWidth;
+      if (Math.abs(this.position) >= width) {
+        this.position = 0;
+      }
+      this.content1.style.transform = `translateX(${this.position}px)`;
+      this.content2.style.transform = `translateX(${this.position + width}px)`;
+    } else {
+      const height = this.content1.scrollHeight;
+      if (Math.abs(this.position) >= height) {
+        this.position = 0;
+      }
+      this.content1.style.transform = `translateY(${this.position}px)`;
+      this.content2.style.transform = `translateY(${this.position + height}px)`;
+    }
+  }
+
   public destroy(): void {
     this.stop();
-    // 不清空 innerHTML
+    // 解绑事件
+    this.container.removeEventListener('mouseenter', this.onMouseEnter);
+    this.container.removeEventListener('mouseleave', this.onMouseLeave);
+    this.container.removeEventListener('wheel', this.onWheel);
   }
 
   public updateData(): void {
@@ -107,6 +149,9 @@ export class ScrollSeamless implements ScrollSeamlessController {
   private animate = () => {
     if (!this.running) return;
     const step = this.options.step;
+    const stepWait = this.options.stepWait;
+    let needWait = false;
+
     if (this.options.direction === 'horizontal') {
       const width = this.content1.scrollWidth;
       this.position -= step;
@@ -115,6 +160,10 @@ export class ScrollSeamless implements ScrollSeamlessController {
       }
       this.content1.style.transform = `translateX(${this.position}px)`;
       this.content2.style.transform = `translateX(${this.position + width}px)`;
+      // 仅在每步对齐时等待
+      if (stepWait > 0 && Math.abs(this.position) % step === 0) {
+        needWait = true;
+      }
     } else {
       const height = this.content1.scrollHeight;
       this.position -= step;
@@ -123,7 +172,17 @@ export class ScrollSeamless implements ScrollSeamlessController {
       }
       this.content1.style.transform = `translateY(${this.position}px)`;
       this.content2.style.transform = `translateY(${this.position + height}px)`;
+      if (stepWait > 0 && Math.abs(this.position) % step === 0) {
+        needWait = true;
+      }
     }
-    this.frameId = requestAnimationFrame(this.animate);
+
+    if (needWait && stepWait > 0) {
+      setTimeout(() => {
+        this.frameId = requestAnimationFrame(this.animate);
+      }, stepWait);
+    } else {
+      this.frameId = requestAnimationFrame(this.animate);
+    }
   };
 }

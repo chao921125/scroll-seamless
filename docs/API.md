@@ -13,6 +13,7 @@
 | hoverStop | boolean | 悬停是否停止 | true |
 | wheelEnable | boolean | 鼠标滚轮 | false |
 | singleLine | boolean | 单行横向滚动 | false |
+| custom | boolean | slot渲染模式，true为完全自定义（slot只渲染一次，用户自定义结构），false为兼容作用域插槽 | false |
 
 ## 方法说明
 - `start()`：启动滚动
@@ -30,6 +31,10 @@
 - 支持自定义工具方法扩展
 - 支持自定义样式
 - 支持多端调用
+
+### slot用法
+- 默认（custom=false）：slot支持作用域插槽，#default="{ item, index }"
+- 完全自定义（custom=true）：slot只渲染一次，用户可在slot内任意v-for、任意结构
 
 ---
 

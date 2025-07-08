@@ -2,24 +2,34 @@
   <div ref="rootRef" class="scroll-seamless-vue">
     <div class="scroll-seamless-content" :class="props.direction">
       <div class="ss-content" :style="ssContentStyle">
-        <slot
-          v-for="(item, idx) in props.data"
-          :item="item"
-          :index="idx"
-          :key="idx"
-        >
-          <span class="ss-item">{{ item }}</span>
-        </slot>
+        <template v-if="props.custom">
+          <slot />
+        </template>
+        <template v-else>
+          <slot
+            v-for="(item, idx) in props.data"
+            :item="item"
+            :index="idx"
+            :key="idx"
+          >
+            <span class="ss-item">{{ item }}</span>
+          </slot>
+        </template>
       </div>
       <div class="ss-content" :style="ssContentStyle">
-        <slot
-          v-for="(item, idx) in props.data"
-          :item="item"
-          :index="idx"
-          :key="'copy-' + idx"
-        >
-          <span class="ss-item">{{ item }}</span>
-        </slot>
+        <template v-if="props.custom">
+          <slot />
+        </template>
+        <template v-else>
+          <slot
+            v-for="(item, idx) in props.data"
+            :item="item"
+            :index="idx"
+            :key="'copy-' + idx"
+          >
+            <span class="ss-item">{{ item }}</span>
+          </slot>
+        </template>
       </div>
     </div>
   </div>
@@ -75,6 +85,10 @@ export default defineComponent({
     modelValue: {
       type: Boolean,
       default: undefined
+    },
+    custom: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [],
@@ -110,7 +124,9 @@ export default defineComponent({
 
     onMounted(() => {
       if (rootRef.value) {
-        instance = new ScrollSeamless(rootRef.value, { ...props, data, bezier, direction });
+        // 确保 step 为数字类型
+        const options = { ...props, step: Number(props.step) };
+        instance = new ScrollSeamless(rootRef.value, options);
         if (props.modelValue === false) {
           instance.stop();
         }
@@ -129,6 +145,10 @@ export default defineComponent({
 
     watch(() => props.data, (val) => {
       if (instance) instance.updateData(val);
+    });
+
+    watch(() => props.step, (val) => {
+      if (instance) instance.setOptions({ step: Number(val) });
     });
 
     return {

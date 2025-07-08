@@ -90,32 +90,22 @@ setTimeout(() => {
 ### 2. Vue Component
 ```vue
 <template>
-  <div style="width: 400px; height: 40px; border: 1px solid #ccc;">
-    <ScrollSeamlessVue
-      :data="items"
-      direction="horizontal"
-      :step="1"
-      :stepWait="10"
-      :minCountToScroll="2"
-      :hoverStop="true"
-      :wheelEnable="true"
-      ref="scrollRef"
-    >
-      <template #default>
-        <span v-for="item in items" :key="item" style="margin: 0 8px;">{{ item }}</span>
-      </template>
-    </ScrollSeamlessVue>
-  </div>
-  <button @click="updateData">Update Data</button>
+  <!-- Compatible mode (default, supports scoped slot) -->
+  <ScrollSeamlessVue :data="items" direction="horizontal">
+    <template #default="{ item, index }">
+      <span>{{ item }}</span>
+    </template>
+  </ScrollSeamlessVue>
+
+  <!-- Fully custom mode (custom=true, slot rendered once, user controls structure) -->
+  <ScrollSeamlessVue :data="items" direction="horizontal" :custom="true">
+    <span v-for="item in items" :key="item">{{ item }}</span>
+  </ScrollSeamlessVue>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
 import ScrollSeamlessVue from 'scroll-seamless/vue';
 const items = ref(['Seamless', 'Scroll', 'Demo']);
-const scrollRef = ref();
-function updateData() {
-  items.value = ['New 1', 'New 2', 'New 3'];
-}
 </script>
 ```
 
