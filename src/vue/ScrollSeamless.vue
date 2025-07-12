@@ -1,33 +1,35 @@
 <template>
-  <div ref="rootRef" class="scroll-seamless-vue">
+  <div ref="rootRef" class="scroll-seamless-vue" :class="props.class" :style="props.style">
     <div class="scroll-seamless-content" :class="props.direction">
-      <div class="ss-content" :style="ssContentStyle">
+      <!-- 第一组内容 -->
+      <div class="ss-content" :class="props.contentClass" :style="ssContentStyle">
         <template v-if="props.custom">
           <slot />
         </template>
         <template v-else>
           <slot
             v-for="(item, idx) in props.data"
+            :key="idx"
             :item="item"
             :index="idx"
-            :key="idx"
           >
-            <span class="ss-item">{{ item }}</span>
+            <span class="ss-item" :class="props.itemClass">{{ item }}</span>
           </slot>
         </template>
       </div>
-      <div class="ss-content" :style="ssContentStyle">
+      <!-- 第二组内容（用于无缝滚动） -->
+      <div class="ss-content" :class="props.contentClass" :style="ssContentStyle">
         <template v-if="props.custom">
           <slot />
         </template>
         <template v-else>
           <slot
             v-for="(item, idx) in props.data"
+            :key="`copy-${idx}`"
             :item="item"
             :index="idx"
-            :key="'copy-' + idx"
           >
-            <span class="ss-item">{{ item }}</span>
+            <span class="ss-item" :class="props.itemClass">{{ item }}</span>
           </slot>
         </template>
       </div>
@@ -89,6 +91,22 @@ export default defineComponent({
     custom: {
       type: Boolean,
       default: false
+    },
+    class: {
+      type: [String, Array, Object],
+      default: ''
+    },
+    style: {
+      type: [String, Object, Array],
+      default: ''
+    },
+    contentClass: {
+      type: [String, Array, Object],
+      default: ''
+    },
+    itemClass: {
+      type: [String, Array, Object],
+      default: ''
     }
   },
   emits: [],
@@ -100,23 +118,27 @@ export default defineComponent({
     const ssContentStyle = computed(() => {
       if (props.direction === 'horizontal') {
         return {
+          position: 'absolute',
+          top: 0,
+          left: 0,
           display: 'inline-block',
           whiteSpace: 'nowrap',
           verticalAlign: 'top',
         };
       }
-      return {};
+      return {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        display: 'block',
+        whiteSpace: 'normal',
+      };
     });
-
-    // 直接用 props，无类型断言
-    const data = props.data;
-    const bezier = props.bezier;
-    const direction = props.direction;
 
     const start = () => instance && instance.start();
     const stop = () => instance && instance.stop();
     const destroy = () => instance && instance.destroy();
-    const updateData = (data) => instance && instance.updateData(data);
+    const updateData = () => instance && instance.updateData();
     const setOptions = (options) => instance && instance.setOptions(options);
     const isRunning = () => instance && instance.isRunning();
 
@@ -144,7 +166,7 @@ export default defineComponent({
     });
 
     watch(() => props.data, (val) => {
-      if (instance) instance.updateData(val);
+      if (instance) instance.updateData();
     });
 
     watch(() => props.step, (val) => {
@@ -166,16 +188,5 @@ export default defineComponent({
   height: 100%;
   overflow: hidden;
   position: relative;
-}
-.scroll-seamless-content.horizontal {
-  display: flex;
-  flex-direction: row;
-  white-space: nowrap;
-}
-.scroll-seamless-content.vertical {
-  display: block;
-}
-.scroll-seamless-content.horizontal > * {
-  display: inline-block;
 }
 </style> 

@@ -10,6 +10,11 @@ const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
   hoverStop: true,
   wheelEnable: false,
   singleLine: false,
+  custom: false,
+  onEvent: () => {},
+  plugins: [],
+  performance: {},
+  accessibility: {},
 };
 
 export class ScrollSeamless implements ScrollSeamlessController {

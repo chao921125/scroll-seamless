@@ -1,34 +1,48 @@
-import React, { useRef, useState } from 'react';
-import SeamlessScroll from '../src/react/SeamlessScroll';
+import React, { useRef } from 'react';
+import { ScrollSeamless } from '../dist/react/index.esm.js';
 
-export default function SeamlessScrollDemo() {
-  const [items, setItems] = useState(['无缝', '滚动', '示例', 'Seamless', 'Scroll', 'Demo']);
-  const scrollRef = useRef();
+const ReactDemo = () => {
+  const scrollRef = useRef(null);
+  const data = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
 
-  const updateData = () => {
-    setItems(['新数据1', '新数据2', '新数据3']);
-    // 也可以通过 scrollRef.current?.updateData([...]) 强制更新
+  const handleStart = () => {
+    scrollRef.current?.start();
+  };
+
+  const handleStop = () => {
+    scrollRef.current?.stop();
   };
 
   return (
-    <div>
-      <div style={{ width: 400, height: 40, border: '1px solid #ccc' }}>
-        <SeamlessScroll
-          ref={scrollRef}
-          data={items}
-          direction="horizontal"
-          step={1}
-          stepWait={10}
-          minCountToScroll={2}
-          hoverStop={true}
-          wheelEnable={true}
-        >
-          {items.map(item => (
-            <span key={item} style={{ margin: '0 8px' }}>{item}</span>
-          ))}
-        </SeamlessScroll>
+    <div style={{ width: '300px', height: '50px', border: '1px solid #ccc' }}>
+      <ScrollSeamless
+        ref={scrollRef}
+        data={data}
+        direction="horizontal"
+        step={1}
+        hoverStop={true}
+        wheelEnable={true}
+      >
+        {/* 函数式 children - 渲染单个项目 */}
+        {(item, index) => (
+          <div key={index} style={{ 
+            padding: '10px', 
+            margin: '0 5px', 
+            backgroundColor: '#f0f0f0',
+            borderRadius: '4px',
+            display: 'inline-block'
+          }}>
+            {item}
+          </div>
+        )}
+      </ScrollSeamless>
+      
+      <div style={{ marginTop: '10px' }}>
+        <button onClick={handleStart}>开始</button>
+        <button onClick={handleStop}>停止</button>
       </div>
-      <button onClick={updateData}>更新数据</button>
     </div>
   );
-} 
+};
+
+export default ReactDemo; 

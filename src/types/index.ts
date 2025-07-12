@@ -4,45 +4,94 @@
 export type ScrollDirection = 'horizontal' | 'vertical';
 
 /**
- * 无缝滚动配置项
+ * 滚动事件类型
  */
-export interface ScrollSeamlessOptions {
-  /** 滚动内容 */
-  data: string[];
-  /** 滚动方向，默认 horizontal */
-  direction?: ScrollDirection;
-  /** 多少条数据开始滚动 */
-  minCountToScroll?: number;
-  /** 步进速度，像素/帧 */
-  step?: number;
-  /** 单步停止等待时间 ms */
-  stepWait?: number;
-  /** 动画延时时间 ms */
-  delay?: number;
-  /** 贝塞尔曲线 */
-  bezier?: [number, number, number, number];
-  /** 鼠标悬停是否停止，默认 true */
-  hoverStop?: boolean;
-  /** 鼠标滚轮是否可用，默认 false */
-  wheelEnable?: boolean;
-  /** 启用单行横向滚动 */
-  singleLine?: boolean;
+export type ScrollSeamlessEvent =
+  | 'start'
+  | 'stop'
+  | 'destroy'
+  | 'update'
+  | 'cycle'
+  | 'reach-end'
+  | 'reach-start';
+
+// 事件回调参数类型
+export interface ScrollSeamlessEventPayload {
+  type: ScrollSeamlessEvent;
+  direction: ScrollDirection;
+  position: number;
+  cycleCount?: number;
+  data?: any;
 }
 
 /**
- * 无缝滚动控制器接口
+ * 性能监控插件配置
+ */
+export interface PerformancePluginOptions {
+  enabled?: boolean;
+  fps?: boolean;
+  memory?: boolean;
+  timing?: boolean;
+  onUpdate?: (metrics: any) => void;
+}
+
+/**
+ * 无障碍插件配置
+ */
+export interface AccessibilityPluginOptions {
+  enabled?: boolean;
+  ariaLabel?: string;
+  keyboardNavigation?: boolean;
+  screenReader?: boolean;
+  focusable?: boolean;
+}
+
+/**
+ * 插件类型
+ */
+export interface ScrollSeamlessPlugin {
+  id: string;
+  apply: (instance: ScrollSeamlessController) => void;
+  destroy?: () => void;
+}
+
+/**
+ * 组件 props/options 类型
+ */
+export interface ScrollSeamlessOptions {
+  data: string[];
+  direction?: ScrollDirection;
+  minCountToScroll?: number;
+  step?: number;
+  stepWait?: number;
+  delay?: number;
+  bezier?: [number, number, number, number];
+  hoverStop?: boolean;
+  wheelEnable?: boolean;
+  singleLine?: boolean;
+  custom?: boolean;
+  onEvent?: (event: ScrollSeamlessEvent, data?: any) => void;
+  plugins?: ScrollSeamlessPlugin[];
+  performance?: PerformancePluginOptions;
+  accessibility?: AccessibilityPluginOptions;
+}
+
+/**
+ * 控制器方法类型
  */
 export interface ScrollSeamlessController {
-  /** 启动滚动动画 */
-  start(): void;
-  /** 停止滚动动画 */
-  stop(): void;
-  /** 销毁实例，解绑事件 */
-  destroy(): void;
-  /** 是否正在滚动 */
-  isRunning(): boolean;
-  /** 更新滚动数据 */
-  updateData(data: string[]): void;
-  /** 动态更新参数 */
-  setOptions(options: Partial<ScrollSeamlessOptions>): void;
+  start: () => void;
+  stop: () => void;
+  destroy: () => void;
+  updateData: () => void;
+  setOptions: (options: Partial<ScrollSeamlessOptions>) => void;
+  isRunning: () => boolean;
+  // 可选：获取当前滚动位置
+  getPosition?: () => number;
+  setPosition?: (position: number) => void;
+  // 可选：插件相关
+  addPlugin?: (plugin: ScrollSeamlessPlugin) => void;
+  removePlugin?: (pluginId: string) => void;
+  // 可选：性能数据
+  getPerformance?: () => any;
 }

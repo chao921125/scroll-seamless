@@ -1,6 +1,6 @@
 {
 	"name": "scroll-seamless",
-	"version": "1.1.4",
+	"version": "1.1.5",
 	"description": "A seamless scroll library for JS, Vue, and React.",
 	"keywords": [
 		"seamless",
@@ -28,10 +28,7 @@
 	"module": "dist/index.esm.js",
 	"types": "dist/index.d.ts",
 	"files": [
-		"dist",
-		"docs",
-		"README.md",
-		"LICENSE"
+		"dist"
 	],
 	"exports": {
 		".": {
@@ -100,7 +97,7 @@
 		"jsdom": "^26.1.0",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
-		"rollup": "^4.44.2",
+		"rollup": "^4.45.0",
 		"rollup-plugin-dts": "^6.2.1",
 		"rollup-plugin-postcss": "^4.0.2",
 		"rollup-plugin-vue": "^6.0.0",
