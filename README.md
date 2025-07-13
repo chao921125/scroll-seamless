@@ -1,5 +1,9 @@
 # Scroll Seamless
 
+[![npm version](https://img.shields.io/npm/v/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
+[![npm downloads](https://img.shields.io/npm/dm/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
+[![License](https://img.shields.io/npm/l/scroll-seamless.svg)](https://github.com/chao921125/scroll-seamless/blob/main/LICENSE)
+
 一个支持 JavaScript、Vue3 和 React 的无缝滚动库。
 
 ## 特性
