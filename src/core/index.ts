@@ -1,7 +1,7 @@
 import { ScrollSeamlessOptions, ScrollSeamlessController } from '../types';
 
 const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
-  direction: 'horizontal',
+  direction: 'right',
   minCountToScroll: 2,
   step: 1,
   stepWait: 0,
@@ -11,6 +11,8 @@ const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
   wheelEnable: false,
   singleLine: false,
   custom: false,
+  rows: 1,
+  cols: 1,
   onEvent: () => {},
   plugins: [],
   performance: {},
@@ -45,7 +47,7 @@ export class ScrollSeamless implements ScrollSeamlessController {
     this.content1.style.position = this.content2.style.position = 'absolute';
     this.content1.style.top = this.content2.style.top = '0';
     this.content1.style.left = this.content2.style.left = '0';
-    if (this.options.direction === 'horizontal') {
+    if (this.options.direction === 'left' || this.options.direction === 'right') {
       this.content1.style.display = this.content2.style.display = 'inline-block';
       this.content1.style.whiteSpace = this.content2.style.whiteSpace = 'nowrap';
     } else {
@@ -65,7 +67,7 @@ export class ScrollSeamless implements ScrollSeamlessController {
   }
 
   private layout() {
-    if (this.options.direction === 'horizontal') {
+    if (this.options.direction === 'left' || this.options.direction === 'right') {
       const width = this.content1.scrollWidth;
       this.content1.style.transform = `translateX(0)`;
       this.content2.style.transform = `translateX(${width}px)`;
@@ -108,7 +110,7 @@ export class ScrollSeamless implements ScrollSeamlessController {
   };
 
   private updatePosition() {
-    if (this.options.direction === 'horizontal') {
+    if (this.options.direction === 'left' || this.options.direction === 'right') {
       const width = this.content1.scrollWidth;
       if (Math.abs(this.position) >= width) {
         this.position = 0;
@@ -157,23 +159,36 @@ export class ScrollSeamless implements ScrollSeamlessController {
     const stepWait = this.options.stepWait;
     let needWait = false;
 
-    if (this.options.direction === 'horizontal') {
+    if (this.options.direction === 'left' || this.options.direction === 'right') {
       const width = this.content1.scrollWidth;
-      this.position -= step;
-      if (Math.abs(this.position) >= width) {
-        this.position = 0;
+      if (this.options.direction === 'left') {
+        this.position -= step;
+        if (Math.abs(this.position) >= width) {
+          this.position = 0;
+        }
+      } else {
+        this.position += step;
+        if (this.position >= width) {
+          this.position = 0;
+        }
       }
       this.content1.style.transform = `translateX(${this.position}px)`;
       this.content2.style.transform = `translateX(${this.position + width}px)`;
-      // 仅在每步对齐时等待
       if (stepWait > 0 && Math.abs(this.position) % step === 0) {
         needWait = true;
       }
     } else {
       const height = this.content1.scrollHeight;
-      this.position -= step;
-      if (Math.abs(this.position) >= height) {
-        this.position = 0;
+      if (this.options.direction === 'up') {
+        this.position -= step;
+        if (Math.abs(this.position) >= height) {
+          this.position = 0;
+        }
+      } else {
+        this.position += step;
+        if (this.position >= height) {
+          this.position = 0;
+        }
       }
       this.content1.style.transform = `translateY(${this.position}px)`;
       this.content2.style.transform = `translateY(${this.position + height}px)`;

@@ -5,7 +5,7 @@ import { ScrollSeamless } from '../src/react';
 describe('ScrollSeamless (React)', () => {
   it('可以正常渲染', () => {
     render(
-      <ScrollSeamless data={['A', 'B', 'C']} direction="horizontal">
+      <ScrollSeamless data={['A', 'B', 'C']} direction="right">
         {(item, index) => <span key={index}>{item}</span>}
       </ScrollSeamless>
     );
@@ -15,12 +15,12 @@ describe('ScrollSeamless (React)', () => {
 
   it('支持数据更新', () => {
     const { rerender } = render(
-      <ScrollSeamless data={['A', 'B', 'C']} direction="horizontal">
+      <ScrollSeamless data={['A', 'B', 'C']} direction="right">
         {(item, index) => <span key={index}>{item}</span>}
       </ScrollSeamless>
     );
     rerender(
-      <ScrollSeamless data={['X', 'Y']} direction="horizontal">
+      <ScrollSeamless data={['X', 'Y']} direction="right">
         {(item, index) => <span key={index}>{item}</span>}
       </ScrollSeamless>
     );
@@ -31,7 +31,7 @@ describe('ScrollSeamless (React)', () => {
   it('ref 支持方法调用', () => {
     const ref = createRef();
     render(
-      <ScrollSeamless ref={ref} data={['A', 'B', 'C']} direction="horizontal">
+      <ScrollSeamless ref={ref} data={['A', 'B', 'C']} direction="right">
         {(item, index) => <span key={index}>{item}</span>}
       </ScrollSeamless>
     );

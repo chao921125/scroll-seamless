@@ -116,7 +116,7 @@ export default defineComponent({
 
     // 横向时内容容器样式
     const ssContentStyle = computed(() => {
-      if (props.direction === 'horizontal') {
+      if (props.direction === 'left' || props.direction === 'right') {
         return {
           position: 'absolute',
           top: 0,

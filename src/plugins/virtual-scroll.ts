@@ -83,7 +83,7 @@ export class VirtualScrollPlugin implements ScrollSeamlessPlugin {
 
     // 获取滚动方向
     const direction = (this.instance as any)?.options?.direction || 'horizontal';
-    this.isHorizontal = direction === 'horizontal';
+    this.isHorizontal = direction === 'left' || direction === 'right';
 
     // 设置容器尺寸
     this.containerSize = this.isHorizontal 

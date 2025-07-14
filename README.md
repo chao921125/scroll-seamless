@@ -42,7 +42,7 @@ const MyComponent = () => {
       <ScrollSeamless
         ref={scrollRef}
         data={data}
-        direction="horizontal"
+        direction="right"
         step={1}
         hoverStop={true}
         wheelEnable={true}
@@ -72,7 +72,7 @@ const MyComponent = () => {
     <ScrollSeamless
       ref="scrollRef"
       :data="data"
-      direction="horizontal"
+      direction="right"
       :step="1"
       :hover-stop="true"
       :wheel-enable="true"
@@ -116,7 +116,7 @@ import { ScrollSeamless } from 'scroll-seamless/core';
 const container = document.getElementById('scroll-container');
 const scrollInstance = new ScrollSeamless(container, {
   data: ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'],
-  direction: 'horizontal',
+  direction: 'right',
   step: 1,
   hoverStop: true,
   wheelEnable: true
@@ -146,7 +146,7 @@ scrollInstance.destroy();
   <!-- 完全自定义模式（custom=true，slot 只渲染一次，用户可自定义结构） -->
   <ScrollSeamless
     :data="items"
-    direction="horizontal"
+    direction="right"
     :step="0.5"
     :custom="true"
     :hover-stop="true"
@@ -214,7 +214,7 @@ const CustomScrollDemo = () => {
       <ScrollSeamless
         ref={scrollRef}
         data={items}
-        direction="horizontal"
+        direction="right"
         step={0.5}
         custom={true}
         hoverStop={true}
@@ -395,7 +395,7 @@ Scroll Seamless 组件核心样式只保证功能性（布局、溢出、内容�
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `data` | `string[]` | `[]` | 滚动数据数组 |
-| `direction` | `'horizontal' \| 'vertical'` | `'horizontal'` | 滚动方向 |
+| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | 滚动方向（上/下/左/右） |
 | `step` | `number` | `1` | 每步移动像素 |
 | `stepWait` | `number` | `0` | 每步等待时间(ms) |
 | `delay` | `number` | `0` | 初始延迟时间(ms) |

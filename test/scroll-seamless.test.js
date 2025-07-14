@@ -26,7 +26,7 @@ describe('ScrollSeamless', () => {
     
     scroll = new ScrollSeamless(container, {
       data: ['A', 'B', 'C'],
-      direction: 'horizontal',
+      direction: 'right',
     });
   });
 

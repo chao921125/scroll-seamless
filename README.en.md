@@ -38,7 +38,7 @@ const MyComponent = () => {
       <ScrollSeamless
         ref={scrollRef}
         data={data}
-        direction="horizontal"
+        direction="right"
         step={1}
         hoverStop={true}
         wheelEnable={true}
@@ -68,7 +68,7 @@ const MyComponent = () => {
     <ScrollSeamless
       ref="scrollRef"
       :data="data"
-      direction="horizontal"
+      direction="right"
       :step="1"
       :hover-stop="true"
       :wheel-enable="true"
@@ -112,7 +112,7 @@ import { ScrollSeamless } from 'scroll-seamless/core';
 const container = document.getElementById('scroll-container');
 const scrollInstance = new ScrollSeamless(container, {
   data: ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'],
-  direction: 'horizontal',
+  direction: 'right',
   step: 1,
   hoverStop: true,
   wheelEnable: true
@@ -142,7 +142,7 @@ When you need to completely customize the content structure, you can use `custom
   <!-- Fully custom mode (custom=true, slot rendered once, user controls structure) -->
   <ScrollSeamless
     :data="items"
-    direction="horizontal"
+    direction="right"
     :step="0.5"
     :custom="true"
     :hover-stop="true"
@@ -210,7 +210,7 @@ const CustomScrollDemo = () => {
       <ScrollSeamless
         ref={scrollRef}
         data={items}
-        direction="horizontal"
+        direction="right"
         step={0.5}
         custom={true}
         hoverStop={true}
@@ -391,7 +391,12 @@ Scroll Seamless component core styles only ensure functionality (layout, overflo
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `data` | `string[]` | `[]` | Scroll data array |
-| `direction` | `'horizontal' \| 'vertical'` | `'horizontal'` | Scroll direction |
+| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | Scroll direction (up/down/left/right) |
+> `direction` explanation:
+> - `'left'`: content scrolls left (default)
+> - `'right'`: content scrolls right
+> - `'up'`: content scrolls up
+> - `'down'`: content scrolls down
 | `step` | `number` | `1` | Pixels moved per step |
 | `stepWait` | `number` | `0` | Wait time per step (ms) |
 | `delay` | `number` | `0` | Initial delay time (ms) |

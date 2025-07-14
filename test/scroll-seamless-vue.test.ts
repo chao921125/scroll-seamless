@@ -8,7 +8,7 @@ describe('ScrollSeamlessVue', () => {
     const wrapper = mount(ScrollSeamlessVue, {
       props: {
         data: ['A', 'B', 'C'],
-        direction: 'horizontal',
+        direction: 'right',
       },
     });
     expect(wrapper.exists()).toBe(true);
@@ -18,7 +18,7 @@ describe('ScrollSeamlessVue', () => {
     const wrapper = mount(ScrollSeamlessVue, {
       props: {
         data: ['A', 'B', 'C'],
-        direction: 'horizontal',
+        direction: 'right',
       },
     });
     await wrapper.setProps({ data: ['X', 'Y'] });
@@ -30,7 +30,7 @@ describe('ScrollSeamlessVue', () => {
     const wrapper = mount(ScrollSeamlessVue, {
       props: {
         data: ['A', 'B', 'C'],
-        direction: 'horizontal',
+        direction: 'right',
       },
     });
     const vm = wrapper.vm as any;
@@ -43,7 +43,7 @@ describe('ScrollSeamlessVue', () => {
     const wrapper = mount(ScrollSeamlessVue, {
       props: {
         data: ['A', 'B', 'C'],
-        direction: 'horizontal',
+        direction: 'right',
       },
       slots: {
         default: () => [h('span', 'A'), h('span', 'B'), h('span', 'C')]

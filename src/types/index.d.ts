@@ -1,5 +1,5 @@
 export * from './index';
-export type ScrollDirection = 'horizontal' | 'vertical';
+export type ScrollDirection = 'up' | 'down' | 'left' | 'right';
 export type ScrollSeamlessEvent =
   | 'start'
   | 'stop'
@@ -38,6 +38,8 @@ export interface ScrollSeamlessOptions {
   wheelEnable?: boolean;
   singleLine?: boolean;
   custom?: boolean;
+  rows?: number;
+  cols?: number;
   onEvent?: (event: ScrollSeamlessEvent, data?: any) => void;
   plugins?: ScrollSeamlessPlugin[];
   performance?: PerformancePluginOptions;

@@ -1,7 +1,7 @@
 /**
  * 滚动方向类型
  */
-export type ScrollDirection = 'horizontal' | 'vertical';
+export type ScrollDirection = 'up' | 'down' | 'left' | 'right';
 
 /**
  * 滚动事件类型
@@ -70,6 +70,8 @@ export interface ScrollSeamlessOptions {
   wheelEnable?: boolean;
   singleLine?: boolean;
   custom?: boolean;
+  rows?: number;
+  cols?: number;
   onEvent?: (event: ScrollSeamlessEvent, data?: any) => void;
   plugins?: ScrollSeamlessPlugin[];
   performance?: PerformancePluginOptions;

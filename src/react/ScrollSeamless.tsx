@@ -96,9 +96,9 @@ const ScrollSeamlessComponent = (
     position: 'absolute',
     top: 0,
     left: 0,
-    display: props.direction === 'horizontal' ? 'inline-block' : 'block',
-    whiteSpace: props.direction === 'horizontal' ? 'nowrap' : 'normal',
-    verticalAlign: props.direction === 'horizontal' ? 'top' : 'baseline',
+    display: props.direction === 'left' || props.direction === 'right' ? 'inline-block' : 'block',
+    whiteSpace: props.direction === 'left' || props.direction === 'right' ? 'nowrap' : 'normal',
+    verticalAlign: props.direction === 'left' || props.direction === 'right' ? 'top' : 'baseline',
   };
 
   return (
