@@ -437,6 +437,28 @@ Scroll Seamless 组件核心样式只保证功能性（布局、溢出、内容�
 | `bufferSize` | `number` | `5` | 缓冲区大小 |
 | `onRender` | `(start, end, count) => void` | - | 渲染回调 |
 
+## 方向参数说明
+
+- `direction` 仅支持 `'left' | 'right' | 'up' | 'down'`，默认值为 `'left'`，与源码类型完全一致。
+- 推荐通过 core 导出的 `DEFAULT_OPTIONS`、类型、工具函数进行多端复用。
+
+## 工具函数与高级用法
+
+可直接从 `scroll-seamless/core/utils` 导入以下工具函数：
+- `getLegalDirection(direction)`：方向合法性校验
+- `getContentTransform(direction, position, totalLength, isSecondContent)`：内容 transform 计算
+- `getContentStyle(direction)`：内容区样式生成
+- `fireEvent(handler, event, payload)`：统一事件分发
+
+示例：
+```js
+import { getLegalDirection, getContentTransform, getContentStyle, fireEvent } from 'scroll-seamless/core/utils';
+```
+
+## 事件系统
+
+推荐通过 `fireEvent` 工具函数分发自定义事件，便于插件/扩展统一接入。
+
 ## 许可证
 
 BSD-3-Clause

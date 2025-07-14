@@ -22,6 +22,8 @@ export interface ScrollSeamlessRef {
   isRunning: () => boolean | undefined;
 }
 
+const legalDirections = ['left', 'right', 'up', 'down'];
+
 const ScrollSeamlessComponent = (
   props: ScrollSeamlessProps,
   ref: ForwardedRef<ScrollSeamlessRef>
@@ -40,7 +42,12 @@ const ScrollSeamlessComponent = (
 
   useEffect(() => {
     if (rootRef.current) {
-      instanceRef.current = new ScrollSeamlessCore(rootRef.current, props);
+      // direction 兜底校验
+      const safeDirection = legalDirections.includes(props.direction as string)
+        ? props.direction
+        : 'left';
+      const options = { ...props, direction: safeDirection };
+      instanceRef.current = new ScrollSeamlessCore(rootRef.current, options);
       if (props.running === false) {
         instanceRef.current.stop();
       }
@@ -119,6 +126,11 @@ const ScrollSeamlessComponent = (
       </div>
     </div>
   );
+};
+
+// 默认 props
+ScrollSeamlessComponent.defaultProps = {
+  direction: 'left',
 };
 
 export const ScrollSeamless = forwardRef(ScrollSeamlessComponent);

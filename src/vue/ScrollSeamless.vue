@@ -50,7 +50,8 @@ export default defineComponent({
     },
     direction: {
       type: String,
-      default: 'horizontal'
+      default: function() { return 'left'; },
+      validator: val => ['left', 'right', 'up', 'down'].includes(val)
     },
     minCountToScroll: {
       type: Number,
@@ -146,8 +147,10 @@ export default defineComponent({
 
     onMounted(() => {
       if (rootRef.value) {
-        // 确保 step 为数字类型
-        const options = { ...props, step: Number(props.step) };
+        // direction 兜底校验
+        const legalDirections = ['left', 'right', 'up', 'down'];
+        const safeDirection = legalDirections.includes(props.direction) ? props.direction : 'left';
+        const options = { ...props, direction: safeDirection, step: Number(props.step) };
         instance = new ScrollSeamless(rootRef.value, options);
         if (props.modelValue === false) {
           instance.stop();

@@ -438,6 +438,28 @@ Scroll Seamless component core styles only ensure functionality (layout, overflo
 | `bufferSize` | `number` | `5` | Buffer size |
 | `onRender` | `(start, end, count) => void` | - | Render callback |
 
+## Direction Parameter
+
+- `direction` only supports `'left' | 'right' | 'up' | 'down'`, default is `'left'`, fully consistent with source type.
+- It is recommended to use `DEFAULT_OPTIONS`, types, and utility functions exported from core for multi-end reuse.
+
+## Utility Functions & Advanced Usage
+
+You can import the following utility functions from `scroll-seamless/core/utils`:
+- `getLegalDirection(direction)`: direction validation
+- `getContentTransform(direction, position, totalLength, isSecondContent)`: content transform calculation
+- `getContentStyle(direction)`: content area style generation
+- `fireEvent(handler, event, payload)`: unified event dispatch
+
+Example:
+```js
+import { getLegalDirection, getContentTransform, getContentStyle, fireEvent } from 'scroll-seamless/core/utils';
+```
+
+## Event System
+
+It is recommended to use the `fireEvent` utility for custom event dispatch, making plugin/extension integration easier.
+
 ## License
 
 BSD-3-Clause 

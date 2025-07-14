@@ -1,23 +1,5 @@
 import type { ScrollSeamlessOptions, ScrollSeamlessController } from '../types';
-
-const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
-  direction: 'left',
-  minCountToScroll: 2,
-  step: 1,
-  stepWait: 0,
-  delay: 0,
-  bezier: [0.25, 0.1, 0.25, 1],
-  hoverStop: true,
-  wheelEnable: false,
-  singleLine: false,
-  custom: false,
-  rows: 1,
-  cols: 1,
-  onEvent: () => {},
-  plugins: [],
-  performance: {},
-  accessibility: {},
-};
+import { DEFAULT_OPTIONS } from './index';
 
 export function useSeamlessScroll(
   container: HTMLElement,

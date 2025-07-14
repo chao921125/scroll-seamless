@@ -1,6 +1,6 @@
 import { ScrollSeamlessOptions, ScrollSeamlessController } from '../types';
 
-const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
+export const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
   direction: 'right',
   minCountToScroll: 2,
   step: 1,
@@ -67,14 +67,22 @@ export class ScrollSeamless implements ScrollSeamlessController {
   }
 
   private layout() {
-    if (this.options.direction === 'left' || this.options.direction === 'right') {
+    if (this.options.direction === 'left') {
       const width = this.content1.scrollWidth;
       this.content1.style.transform = `translateX(0)`;
       this.content2.style.transform = `translateX(${width}px)`;
-    } else {
+    } else if (this.options.direction === 'right') {
+      const width = this.content1.scrollWidth;
+      this.content1.style.transform = `translateX(0)`;
+      this.content2.style.transform = `translateX(${-width}px)`;
+    } else if (this.options.direction === 'up') {
       const height = this.content1.scrollHeight;
       this.content1.style.transform = `translateY(0)`;
       this.content2.style.transform = `translateY(${height}px)`;
+    } else if (this.options.direction === 'down') {
+      const height = this.content1.scrollHeight;
+      this.content1.style.transform = `translateY(0)`;
+      this.content2.style.transform = `translateY(${-height}px)`;
     }
     this.position = 0;
   }
@@ -158,45 +166,31 @@ export class ScrollSeamless implements ScrollSeamlessController {
     const step = this.options.step;
     const stepWait = this.options.stepWait;
     let needWait = false;
-
-    if (this.options.direction === 'left' || this.options.direction === 'right') {
-      const width = this.content1.scrollWidth;
-      if (this.options.direction === 'left') {
-        this.position -= step;
-        if (Math.abs(this.position) >= width) {
-          this.position = 0;
-        }
-      } else {
-        this.position += step;
-        if (this.position >= width) {
-          this.position = 0;
-        }
-      }
-      this.content1.style.transform = `translateX(${this.position}px)`;
-      this.content2.style.transform = `translateX(${this.position + width}px)`;
-      if (stepWait > 0 && Math.abs(this.position) % step === 0) {
-        needWait = true;
-      }
-    } else {
-      const height = this.content1.scrollHeight;
-      if (this.options.direction === 'up') {
-        this.position -= step;
-        if (Math.abs(this.position) >= height) {
-          this.position = 0;
-        }
-      } else {
-        this.position += step;
-        if (this.position >= height) {
-          this.position = 0;
-        }
-      }
-      this.content1.style.transform = `translateY(${this.position}px)`;
-      this.content2.style.transform = `translateY(${this.position + height}px)`;
-      if (stepWait > 0 && Math.abs(this.position) % step === 0) {
-        needWait = true;
-      }
+    const totalLength = this.getTotalLength();
+    if (this.options.direction === 'left') {
+      this.position += step;
+      if (this.position >= totalLength) this.position = 0;
+      this.content1.style.transform = `translateX(${-this.position}px)`;
+      this.content2.style.transform = `translateX(${-this.position + totalLength}px)`;
+    } else if (this.options.direction === 'right') {
+      this.position -= step;
+      if (this.position <= -totalLength) this.position = 0;
+      this.content1.style.transform = `translateX(${-this.position}px)`;
+      this.content2.style.transform = `translateX(${-this.position - totalLength}px)`;
+    } else if (this.options.direction === 'up') {
+      this.position += step;
+      if (this.position >= totalLength) this.position = 0;
+      this.content1.style.transform = `translateY(${-this.position}px)`;
+      this.content2.style.transform = `translateY(${-this.position + totalLength}px)`;
+    } else if (this.options.direction === 'down') {
+      this.position -= step;
+      if (this.position <= -totalLength) this.position = 0;
+      this.content1.style.transform = `translateY(${-this.position}px)`;
+      this.content2.style.transform = `translateY(${-this.position - totalLength}px)`;
     }
-
+    if (stepWait > 0 && Math.abs(this.position) % step === 0) {
+      needWait = true;
+    }
     if (needWait && stepWait > 0) {
       setTimeout(() => {
         this.frameId = requestAnimationFrame(this.animate);
@@ -205,4 +199,25 @@ export class ScrollSeamless implements ScrollSeamlessController {
       this.frameId = requestAnimationFrame(this.animate);
     }
   };
+
+  // 动态获取内容总长度（高度/宽度），适配四方向
+  private getTotalLength() {
+    if (this.options.direction === 'left' || this.options.direction === 'right') {
+      let total = 0;
+      const children = this.content1.children;
+      for (let i = 0; i < children.length; i++) {
+        const el = children[i] as HTMLElement;
+        total += el.offsetWidth;
+      }
+      return total;
+    } else {
+      let total = 0;
+      const children = this.content1.children;
+      for (let i = 0; i < children.length; i++) {
+        const el = children[i] as HTMLElement;
+        total += el.offsetHeight;
+      }
+      return total;
+    }
+  }
 }
