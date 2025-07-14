@@ -8,7 +8,7 @@
         </template>
         <template v-else>
           <slot
-            v-for="(item, idx) in props.data"
+            v-for="(item, idx) in renderData"
             :key="idx"
             :item="item"
             :index="idx"
@@ -24,7 +24,7 @@
         </template>
         <template v-else>
           <slot
-            v-for="(item, idx) in props.data"
+            v-for="(item, idx) in renderData"
             :key="`copy-${idx}`"
             :item="item"
             :index="idx"
@@ -38,8 +38,9 @@
 </template>
 
 <script>
-import { defineComponent, ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
+import { defineComponent, ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { ScrollSeamless } from '../core';
+import { getRenderData } from '../core/utils';
 
 export default defineComponent({
   name: 'ScrollSeamlessVue',
@@ -114,6 +115,7 @@ export default defineComponent({
   setup(props, { expose }) {
     const rootRef = ref(null);
     let instance = null;
+    let resizeObserver = null;
 
     // 横向时内容容器样式
     const ssContentStyle = computed(() => {
@@ -136,6 +138,8 @@ export default defineComponent({
       };
     });
 
+    const renderData = computed(() => getRenderData(props.data, props.direction));
+
     const start = () => instance && instance.start();
     const stop = () => instance && instance.stop();
     const destroy = () => instance && instance.destroy();
@@ -144,6 +148,21 @@ export default defineComponent({
     const isRunning = () => instance && instance.isRunning();
 
     expose({ start, stop, destroy, updateData, setOptions, isRunning });
+
+    const observeContentResize = () => {
+      if (!rootRef.value) return;
+      const contentEls = rootRef.value.querySelectorAll('.ss-content');
+      if (window.ResizeObserver) {
+        resizeObserver = new ResizeObserver(() => {
+          if (instance) instance.updateData();
+        });
+        contentEls.forEach(el => resizeObserver.observe(el));
+      }
+    };
+    const unobserveContentResize = () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      resizeObserver = null;
+    };
 
     onMounted(() => {
       if (rootRef.value) {
@@ -155,11 +174,15 @@ export default defineComponent({
         if (props.modelValue === false) {
           instance.stop();
         }
+        nextTick(() => {
+          observeContentResize();
+        });
       }
     });
 
     onBeforeUnmount(() => {
       destroy();
+      unobserveContentResize();
     });
 
     watch(() => props.modelValue, (val) => {
@@ -170,6 +193,10 @@ export default defineComponent({
 
     watch(() => props.data, (val) => {
       if (instance) instance.updateData();
+      nextTick(() => {
+        unobserveContentResize();
+        observeContentResize();
+      });
     });
 
     watch(() => props.step, (val) => {
@@ -180,6 +207,7 @@ export default defineComponent({
       rootRef,
       props,
       ssContentStyle,
+      renderData,
     };
   }
 });

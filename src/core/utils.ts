@@ -69,4 +69,11 @@ export function fireEvent(
   if (typeof handler === 'function') {
     handler(event, payload);
   }
+}
+
+export function getRenderData<T>(data: T[], direction: ScrollDirection): T[] {
+  if (direction === 'right' || direction === 'down') {
+    return data.slice().reverse();
+  }
+  return data;
 } 

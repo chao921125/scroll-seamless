@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react
 import type { ForwardedRef, ReactNode, CSSProperties } from 'react';
 import type { ScrollSeamlessOptions } from '../types';
 import { ScrollSeamless as ScrollSeamlessCore } from '../core';
+import { getRenderData } from '../core/utils';
 
 export interface ScrollSeamlessProps extends ScrollSeamlessOptions {
   children?: (item: string, index: number) => ReactNode;
@@ -30,6 +31,7 @@ const ScrollSeamlessComponent = (
 ) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ScrollSeamlessCore | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   useImperativeHandle(ref, () => ({
     start: () => instanceRef.current && instanceRef.current.start(),
@@ -39,6 +41,22 @@ const ScrollSeamlessComponent = (
     setOptions: (options) => instanceRef.current?.setOptions(options),
     isRunning: () => instanceRef.current?.isRunning(),
   }), []);
+
+  // 自动监听内容尺寸变化
+  const observeContentResize = () => {
+    if (!rootRef.current) return;
+    const contentEls = rootRef.current.querySelectorAll('.ss-content');
+    if (window.ResizeObserver) {
+      resizeObserverRef.current = new ResizeObserver(() => {
+        if (instanceRef.current) instanceRef.current.updateData();
+      });
+      contentEls.forEach(el => resizeObserverRef.current!.observe(el));
+    }
+  };
+  const unobserveContentResize = () => {
+    if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
+    resizeObserverRef.current = null;
+  };
 
   useEffect(() => {
     if (rootRef.current) {
@@ -51,9 +69,14 @@ const ScrollSeamlessComponent = (
       if (props.running === false) {
         instanceRef.current.stop();
       }
+      // 自动监听内容尺寸
+      setTimeout(() => {
+        observeContentResize();
+      }, 0);
     }
     return () => {
       instanceRef.current?.destroy();
+      unobserveContentResize();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -66,9 +89,12 @@ const ScrollSeamlessComponent = (
   }, [props.running]);
 
   useEffect(() => {
-    if (instanceRef.current) {
-      instanceRef.current.updateData();
-    }
+    if (instanceRef.current) instanceRef.current.updateData();
+    // 重新监听内容尺寸
+    unobserveContentResize();
+    setTimeout(() => {
+      observeContentResize();
+    }, 0);
   }, [props.data]);
 
   // 渲染单个项目的默认函数
@@ -88,7 +114,8 @@ const ScrollSeamlessComponent = (
     if (props.custom) {
       return props.children ? props.children('', 0) : null;
     }
-    return props.data?.map((item, index) => renderItem(item, index));
+    const renderData = getRenderData(props.data || [], props.direction as any);
+    return renderData.map((item, index) => renderItem(item, index));
   };
 
   // 功能性样式

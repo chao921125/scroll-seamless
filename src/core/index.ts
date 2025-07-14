@@ -1,4 +1,5 @@
 import { ScrollSeamlessOptions, ScrollSeamlessController } from '../types';
+import { getRenderData } from './utils';
 
 export const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
   direction: 'right',
@@ -27,10 +28,14 @@ export class ScrollSeamless implements ScrollSeamlessController {
   private running = false;
   private frameId: number | null = null;
   private position = 0;
+  private rawData: string[];
+  private renderData: string[];
 
   constructor(container: HTMLElement, options: ScrollSeamlessOptions) {
     this.container = container;
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.rawData = options.data;
+    this.renderData = getRenderData(this.rawData, this.options.direction);
     // 只查找内容节点，不生成内容
     const contents = container.querySelectorAll('.ss-content');
     if (contents.length < 2) {
@@ -144,7 +149,7 @@ export class ScrollSeamless implements ScrollSeamlessController {
   }
 
   public updateData(): void {
-    // 外部重新渲染 slot 后，需手动调用 layout
+    this.renderData = getRenderData(this.rawData, this.options.direction);
     this.layout();
     if (this.shouldScroll()) this.start();
     else this.stop();
@@ -156,6 +161,8 @@ export class ScrollSeamless implements ScrollSeamlessController {
 
   public setOptions(options: Partial<ScrollSeamlessOptions>): void {
     this.options = { ...this.options, ...options };
+    if (options.data) this.rawData = options.data;
+    this.renderData = getRenderData(this.rawData, this.options.direction);
     this.layout();
     if (this.shouldScroll()) this.start();
     else this.stop();
