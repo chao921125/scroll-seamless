@@ -20,19 +20,19 @@ export default [
       sourcemap: true
     },
     plugins: [
-      vue(),
-      postcss({
-        extract: false,
-        inject: true
-      }),
-      nodeResolve(),
-      commonjs(),
+      // 只处理 .ts 文件，不处理 .vue 文件
       typescript({ 
         tsconfig: './tsconfig.json', 
         declaration: false,
         compilerOptions: {
           declaration: false
         }
+      }),
+      nodeResolve(),
+      commonjs(),
+      postcss({
+        extract: false,
+        inject: true
       }),
       terser()
     ]
@@ -48,19 +48,19 @@ export default [
       sourcemap: true
     },
     plugins: [
-      vue(),
-      postcss({
-        extract: false,
-        inject: true
-      }),
-      nodeResolve(),
-      commonjs(),
+      // 只处理 .ts 文件，不处理 .vue 文件
       typescript({ 
         tsconfig: './tsconfig.json', 
         declaration: false,
         compilerOptions: {
           declaration: false
         }
+      }),
+      nodeResolve(),
+      commonjs(),
+      postcss({
+        extract: false,
+        inject: true
       }),
       terser()
     ]
@@ -70,11 +70,6 @@ export default [
     input: 'src/vue/index.ts',
     output: { file: 'dist/vue/index.d.ts', format: 'es' },
     plugins: [
-      vue(),
-      postcss({
-        extract: false,
-        inject: true
-      }),
       dts()
     ],
     external

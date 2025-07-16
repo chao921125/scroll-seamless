@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
 import type { ForwardedRef, ReactNode, CSSProperties } from 'react';
-import type { ScrollSeamlessOptions } from '../types';
-import { ScrollSeamless as ScrollSeamlessCore } from '../core';
+import type { ScrollSeamlessOptions, ScrollSeamlessController } from '../types';
+import ScrollSeamlessCore from '../core';
 
 export interface ScrollSeamlessProps extends ScrollSeamlessOptions {
   children?: (item: string, index: number, rowIndex?: number, colIndex?: number) => ReactNode;
@@ -28,7 +28,7 @@ const ScrollSeamlessComponent = (
   ref: ForwardedRef<ScrollSeamlessRef>
 ) => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const instanceRef = useRef<ScrollSeamlessCore | null>(null);
+  const instanceRef = useRef<ScrollSeamlessController | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // 检测 JSDOM 测试环境

@@ -34,11 +34,9 @@ export function createScrollSeamless(
   return new ScrollEngine(container, options);
 }
 
-// 为了向后兼容，导出 ScrollSeamless 类
-export { ScrollEngine as ScrollSeamless };
-
-// 默认导出
-export default ScrollEngine;
+// 将 ScrollEngine 重命名为 ScrollSeamless 并作为默认导出
+const ScrollSeamless = ScrollEngine;
+export default ScrollSeamless;
 
 // 导出工具类
 export * from './utils/ObjectPool';

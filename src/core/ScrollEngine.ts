@@ -6,6 +6,13 @@ import { DOMCache } from './utils/DOMCache';
 import { PluginManager } from './plugins/PluginManager';
 
 /**
+ * 扩展选项接口，添加 renderItem
+ */
+interface ExtendedScrollSeamlessOptions extends ScrollSeamlessOptions {
+  renderItem?: (item: string, index: number, rowIndex?: number, colIndex?: number) => HTMLElement;
+}
+
+/**
  * 滚动状态接口
  */
 interface ScrollState {
@@ -21,7 +28,7 @@ interface ScrollState {
  */
 export class ScrollEngine implements ScrollSeamlessController {
   private container: HTMLElement;
-  private options: Required<ScrollSeamlessOptions>;
+  private options: Required<ExtendedScrollSeamlessOptions>;
   private memoryManager: MemoryManager;
   private domCache: DOMCache;
   private elementPool: ObjectPool<HTMLElement>;
@@ -34,7 +41,7 @@ export class ScrollEngine implements ScrollSeamlessController {
   private seamlessData: string[][] = [];
   private seamlessColData: string[][] = [];
 
-  constructor(container: HTMLElement | null, options: ScrollSeamlessOptions) {
+  constructor(container: HTMLElement | null, options: ExtendedScrollSeamlessOptions) {
     // 输入验证
     if (!container) {
       throw new Error('ScrollEngine: Container element is required');
@@ -75,8 +82,8 @@ export class ScrollEngine implements ScrollSeamlessController {
   /**
    * 合并默认选项和用户选项
    */
-  private mergeOptions(options: ScrollSeamlessOptions): Required<ScrollSeamlessOptions> {
-    const defaultOptions: Required<ScrollSeamlessOptions> = {
+  private mergeOptions(options: ExtendedScrollSeamlessOptions): Required<ExtendedScrollSeamlessOptions> {
+    const defaultOptions: Omit<Required<ExtendedScrollSeamlessOptions>, 'renderItem'> = {
       data: [],
       direction: 'left',
       minCountToScroll: 2,
@@ -96,7 +103,11 @@ export class ScrollEngine implements ScrollSeamlessController {
       dataDriven: false
     };
 
-    return { ...defaultOptions, ...options };
+    // 合并选项，确保 renderItem 是可选的
+    return { 
+      ...defaultOptions, 
+      ...options 
+    } as Required<ExtendedScrollSeamlessOptions>;
   }
 
   /**
@@ -408,24 +419,40 @@ export class ScrollEngine implements ScrollSeamlessController {
     const isHorizontal = this.options.direction === 'left' || this.options.direction === 'right';
     
     // 渲染内容
-    data.forEach(item => {
-      const element1 = this.elementPool.acquire();
-      const element2 = this.elementPool.acquire();
+    data.forEach((item, index) => {
+      let element1: HTMLElement;
+      let element2: HTMLElement;
       
-      element1.textContent = item;
-      element2.textContent = item;
-      
-      // 添加基础样式和间距
-      if (isHorizontal) {
-        element1.style.marginRight = '10px';
-        element2.style.marginRight = '10px';
-        element1.style.display = 'inline-block';
-        element2.style.display = 'inline-block';
+      // 如果提供了自定义渲染函数，使用它
+      if (this.options.renderItem) {
+        // 获取行索引或列索引
+        const rowIndex = this.rowStates.indexOf(state) >= 0 ? this.rowStates.indexOf(state) : undefined;
+        const colIndex = this.colStates.indexOf(state) >= 0 ? this.colStates.indexOf(state) : undefined;
+        
+        // 使用自定义渲染函数
+        element1 = this.options.renderItem(item, index, rowIndex, colIndex);
+        // 克隆第一个元素以创建第二个元素
+        element2 = element1.cloneNode(true) as HTMLElement;
       } else {
-        element1.style.marginBottom = '5px';
-        element2.style.marginBottom = '5px';
-        element1.style.display = 'block';
-        element2.style.display = 'block';
+        // 使用默认渲染
+        element1 = this.elementPool.acquire();
+        element2 = this.elementPool.acquire();
+        
+        element1.textContent = item;
+        element2.textContent = item;
+        
+        // 添加基础样式和间距
+        if (isHorizontal) {
+          element1.style.marginRight = '10px';
+          element2.style.marginRight = '10px';
+          element1.style.display = 'inline-block';
+          element2.style.display = 'inline-block';
+        } else {
+          element1.style.marginBottom = '5px';
+          element2.style.marginBottom = '5px';
+          element1.style.display = 'block';
+          element2.style.display = 'block';
+        }
       }
       
       state.content1.appendChild(element1);
@@ -604,7 +631,7 @@ export class ScrollEngine implements ScrollSeamlessController {
   /**
    * 设置选项
    */
-  public setOptions(options: Partial<ScrollSeamlessOptions>): void {
+  public setOptions(options: Partial<ExtendedScrollSeamlessOptions>): void {
     const wasRunning = this.running;
     this.stop();
     
