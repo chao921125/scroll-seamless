@@ -13,7 +13,8 @@ export type ScrollSeamlessEvent =
   | 'update'
   | 'cycle'
   | 'reach-end'
-  | 'reach-start';
+  | 'reach-start'
+  | 'error';
 
 // 事件回调参数类型
 export interface ScrollSeamlessEventPayload {
@@ -22,6 +23,8 @@ export interface ScrollSeamlessEventPayload {
   position: number;
   cycleCount?: number;
   data?: any;
+  error?: string;
+  stack?: string;
 }
 
 /**
@@ -33,6 +36,7 @@ export interface PerformancePluginOptions {
   memory?: boolean;
   timing?: boolean;
   onUpdate?: (metrics: any) => void;
+  autoRestart?: boolean;
 }
 
 /**
@@ -69,13 +73,13 @@ export interface ScrollSeamlessOptions {
   hoverStop?: boolean;
   wheelEnable?: boolean;
   singleLine?: boolean;
-  custom?: boolean;
   rows?: number;
   cols?: number;
   onEvent?: (event: ScrollSeamlessEvent, data?: any) => void;
   plugins?: ScrollSeamlessPlugin[];
   performance?: PerformancePluginOptions;
   accessibility?: AccessibilityPluginOptions;
+  dataDriven?: boolean;
 }
 
 /**
@@ -96,4 +100,7 @@ export interface ScrollSeamlessController {
   removePlugin?: (pluginId: string) => void;
   // 可选：性能数据
   getPerformance?: () => any;
+  // 渲染相关
+  getRenderMatrix?: () => string[][];
+  getTransforms?: () => string[];
 }

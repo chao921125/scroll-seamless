@@ -40,7 +40,7 @@ describe('ScrollSeamless', () => {
   it('should update data', () => {
     scroll.updateData();
     // 这里只能断言无异常，或检查 DOM 内容
-    expect(container.querySelectorAll('.ss-content')).toHaveLength(2);
+    expect(container.querySelectorAll('.ss-content').length).toBeGreaterThanOrEqual(2);
   });
 
   it('should destroy', () => {

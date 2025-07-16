@@ -6,25 +6,25 @@ describe('ScrollSeamless (React)', () => {
   it('可以正常渲染', () => {
     render(
       <ScrollSeamless data={['A', 'B', 'C']} direction="right">
-        {(item, index) => <span key={index}>{item}</span>}
+        {(item, index) => <span>{`[${index}-${item}]`}</span>}
       </ScrollSeamless>
     );
-    const itemsA = screen.getAllByText('A');
+    const itemsA = screen.getAllByText('[0-A]');
     expect(itemsA.length).toBeGreaterThanOrEqual(1);
   });
 
   it('支持数据更新', () => {
     const { rerender } = render(
       <ScrollSeamless data={['A', 'B', 'C']} direction="right">
-        {(item, index) => <span key={index}>{item}</span>}
+        {(item, index) => <span>{`[${index}-${item}]`}</span>}
       </ScrollSeamless>
     );
     rerender(
       <ScrollSeamless data={['X', 'Y']} direction="right">
-        {(item, index) => <span key={index}>{item}</span>}
+        {(item, index) => <span>{`[${index}-${item}]`}</span>}
       </ScrollSeamless>
     );
-    const itemsX = screen.getAllByText('X');
+    const itemsX = screen.getAllByText('[0-X]');
     expect(itemsX.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -32,7 +32,7 @@ describe('ScrollSeamless (React)', () => {
     const ref = createRef();
     render(
       <ScrollSeamless ref={ref} data={['A', 'B', 'C']} direction="right">
-        {(item, index) => <span key={index}>{item}</span>}
+        {(item, index) => <span>{`[${index}-${item}]`}</span>}
       </ScrollSeamless>
     );
     expect(typeof ref.current?.start).toBe('function');

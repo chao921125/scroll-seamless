@@ -37,7 +37,6 @@ export interface ScrollSeamlessOptions {
   hoverStop?: boolean;
   wheelEnable?: boolean;
   singleLine?: boolean;
-  custom?: boolean;
   rows?: number;
   cols?: number;
   onEvent?: (event: ScrollSeamlessEvent, data?: any) => void;

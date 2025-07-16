@@ -1,5 +1,8 @@
 test/
 node_modules/
+examples/
+docs/
+.kiro/
 *.log
 *.tsbuildinfo
 *.swp
@@ -7,4 +10,11 @@ coverage/
 .git
 .gitignore
 .vscode
-.env 
+.env
+.DS_Store
+*.tgz
+rollup.config.js
+tsconfig.json
+shim.d.ts
+SECURITY.md
+README.en.md

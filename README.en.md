@@ -1,19 +1,28 @@
 # Scroll Seamless
 
-A seamless scroll library supporting JavaScript, Vue3, and React.
+[![npm version](https://img.shields.io/npm/v/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
+[![npm downloads](https://img.shields.io/npm/dm/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
+[![License](https://img.shields.io/npm/l/scroll-seamless.svg)](https://github.com/chao921125/scroll-seamless/blob/main/LICENSE)
+
+A seamless scrolling library for JavaScript, Vue3, and React.
 
 ## Features
 
 - 🚀 High-performance seamless scrolling
-- 🎯 Supports horizontal/vertical directions
-- 🎨 Unified rendering mode (scoped slots/functional children)
+- 🎯 Horizontal/vertical direction support
+- 🎨 Unified rendering mode (scoped slots/function children)
+- 🖼️ Multi-row and multi-column layout support
+- 🔄 True seamless transitions with no gaps
 - 🎛️ Rich configuration options
-- 🖱️ Mouse hover pause
+- 🖱️ Hover pause
 - 🎡 Wheel control
 - 📱 Responsive design
 - 🔧 TypeScript support
-- ⚡ Virtual scrolling support (large data optimization)
-- 🎨 Fully custom mode (custom mode)
+- 🔌 Plugin system support
+- 📊 Built-in performance monitoring
+- ♿ Accessibility features
+- ⚡ Virtual scrolling support (optimized for large data sets)
+- 🎨 Fully customizable mode
 
 ## Installation
 
@@ -26,15 +35,15 @@ npm install scroll-seamless
 ### React Component
 
 ```jsx
-import React, { useRef } from 'react';
-import { ScrollSeamless } from 'scroll-seamless/react';
+import React, { useRef } from "react";
+import { ScrollSeamless } from "scroll-seamless/react";
 
 const MyComponent = () => {
   const scrollRef = useRef(null);
-  const data = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
+  const data = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"];
 
   return (
-    <div style={{ width: '300px', height: '50px' }}>
+    <div style={{ width: "300px", height: "50px" }}>
       <ScrollSeamless
         ref={scrollRef}
         data={data}
@@ -42,19 +51,32 @@ const MyComponent = () => {
         step={1}
         hoverStop={true}
         wheelEnable={true}
+        rows={1}
+        cols={1}
+        itemClass="custom-item-class"
       >
-        {/* Functional children - render single item */}
+        {/* Function children - renders individual items */}
         {(item, index) => (
-          <div key={index} style={{ 
-            padding: '10px', 
-            margin: '0 5px', 
-            backgroundColor: '#f0f0f0',
-            borderRadius: '4px'
-          }}>
+          <div
+            key={index}
+            style={{
+              padding: "10px",
+              margin: "0 5px",
+              backgroundColor: "#f0f0f0",
+              borderRadius: "4px",
+            }}
+          >
             {item}
           </div>
         )}
       </ScrollSeamless>
+      
+      {/* Control buttons */}
+      <div className="controls">
+        <button onClick={() => scrollRef.current?.start()}>Start</button>
+        <button onClick={() => scrollRef.current?.stop()}>Stop</button>
+        <button onClick={() => scrollRef.current?.updateData()}>Update Data</button>
+      </div>
     </div>
   );
 };
@@ -72,34 +94,69 @@ const MyComponent = () => {
       :step="1"
       :hover-stop="true"
       :wheel-enable="true"
+      :rows="1"
+      :cols="1"
+      item-class="custom-item-class"
+      v-model="isScrolling"
     >
-      <!-- Scoped slot - render single item -->
+      <!-- Scoped slot - renders individual items -->
       <template #default="{ item, index }">
-        <div :key="index" style="
+        <div
+          :key="index"
+          style="
           padding: 10px; 
           margin: 0 5px; 
           background-color: #f0f0f0;
           border-radius: 4px;
-        ">
+        "
+        >
           {{ item }}
         </div>
       </template>
     </ScrollSeamless>
+    
+    <!-- Control buttons -->
+    <div class="controls">
+      <button @click="startScroll">Start</button>
+      <button @click="stopScroll">Stop</button>
+      <button @click="updateScrollData">Update Data</button>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
-import { ScrollSeamless } from 'scroll-seamless/vue';
+import { ref } from "vue";
+import { ScrollSeamless } from "scroll-seamless/vue";
 
 export default {
   components: { ScrollSeamless },
   setup() {
     const scrollRef = ref(null);
-    const data = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
+    const data = ref(["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]);
+    const isScrolling = ref(true);
+    
+    const startScroll = () => {
+      scrollRef.value?.start();
+    };
+    
+    const stopScroll = () => {
+      scrollRef.value?.stop();
+    };
+    
+    const updateScrollData = () => {
+      data.value = [...data.value, "New Item " + (data.value.length + 1)];
+      scrollRef.value?.updateData();
+    };
 
-    return { scrollRef, data };
-  }
+    return { 
+      scrollRef, 
+      data, 
+      isScrolling,
+      startScroll,
+      stopScroll,
+      updateScrollData
+    };
+  },
 };
 </script>
 ```
@@ -107,92 +164,167 @@ export default {
 ### JavaScript Core Library
 
 ```javascript
-import { ScrollSeamless } from 'scroll-seamless/core';
+import { ScrollSeamless } from "scroll-seamless/core";
 
-const container = document.getElementById('scroll-container');
+const container = document.getElementById("scroll-container");
 const scrollInstance = new ScrollSeamless(container, {
-  data: ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'],
-  direction: 'right',
+  data: ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"],
+  direction: "right",
   step: 1,
   hoverStop: true,
-  wheelEnable: true
+  wheelEnable: true,
+  rows: 1,
+  cols: 1,
+  plugins: [], // Optional: add custom plugins
+  performance: { enabled: true }, // Enable performance monitoring
+  accessibility: { enabled: true } // Enable accessibility features
 });
 
 // Control methods
 scrollInstance.start();
 scrollInstance.stop();
+scrollInstance.updateData();
 scrollInstance.destroy();
+
+// Get state
+const position = scrollInstance.getPosition();
+const isRunning = scrollInstance.isRunning();
+
+// Set options
+scrollInstance.setOptions({
+  step: 2,
+  direction: "left"
+});
 ```
 
-## Fully Custom Mode (Custom Mode)
-
-When you need to completely customize the content structure, you can use `custom=true` mode. In this mode, the component will not automatically render the data array, but completely delegate the slot/children content to the user.
-
-### Use Cases
-
-- Complex layout structures (such as cards, images, nested elements, etc.)
-- Need custom styles and interactions
-- Non-standard data display requirements
-- Need to combine with other components
-
-### Vue Custom Mode Example
+### Multi-row and Multi-column Layout Example
 
 ```vue
 <template>
-  <!-- Fully custom mode (custom=true, slot rendered once, user controls structure) -->
-  <ScrollSeamless
-    :data="items"
-    direction="right"
-    :step="0.5"
-    :custom="true"
-    :hover-stop="true"
-  >
-    <div style="display: flex;">
-      <div v-for="item in items" :key="item" class="custom-item">
-        <div class="item-content">
-          <span class="prefix">O</span>
-          <span class="text">{{ item }}</span>
-          <span class="suffix">P</span>
+  <div style="width: 600px; height: 200px;">
+    <ScrollSeamless
+      ref="scrollRef"
+      :data="items"
+      direction="left"
+      :step="1"
+      :rows="2"
+      :cols="2"
+      :hover-stop="true"
+    >
+      <template #default="{ item, index, rowIndex, colIndex }">
+        <div class="grid-item">
+          <span>{{ item }}</span>
+          <small>Row: {{ rowIndex }}, Col: {{ colIndex }}</small>
         </div>
-      </div>
-    </div>
-  </ScrollSeamless>
+      </template>
+    </ScrollSeamless>
+  </div>
 </template>
 
 <script>
-import { ref } from 'vue';
-import { ScrollSeamless } from 'scroll-seamless/vue';
+import { ref } from "vue";
+import { ScrollSeamless } from "scroll-seamless/vue";
 
 export default {
   components: { ScrollSeamless },
   setup() {
-    const items = ref(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5']);
-    return { items };
-  }
+    const scrollRef = ref(null);
+    const items = ref(Array.from({ length: 20 }, (_, i) => `Item ${i + 1}`));
+    return { scrollRef, items };
+  },
 };
 </script>
 
 <style scoped>
-.custom-item {
-  padding: 10px;
-  margin: 0 5px;
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-  border-radius: 8px;
-  color: white;
-  font-weight: bold;
-}
-
-.item-content {
+.grid-item {
+  padding: 15px;
+  margin: 5px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-}
-
-.prefix, .suffix {
-  font-size: 12px;
-  opacity: 0.8;
 }
 </style>
+```
+
+### Using Plugins
+
+```javascript
+import { ScrollSeamless, PerformancePlugin } from "scroll-seamless/core";
+import { VirtualScrollPlugin } from "scroll-seamless/plugins";
+
+// Create performance monitoring plugin
+const performancePlugin = new PerformancePlugin({
+  fps: true,
+  memory: true,
+  onUpdate: (metrics) => {
+    console.log('Performance metrics:', metrics);
+  }
+});
+
+// Create virtual scroll plugin (for large datasets)
+const virtualScrollPlugin = new VirtualScrollPlugin({
+  itemHeight: 30,
+  overscan: 5
+});
+
+// Initialize scroll instance with plugins
+const scrollInstance = new ScrollSeamless(container, {
+  data: Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`),
+  plugins: [performancePlugin, virtualScrollPlugin]
+});
+
+// You can also add plugins after instance creation
+scrollInstance.addPlugin({
+  id: 'custom-plugin',
+  apply: (instance) => {
+    // Custom plugin logic
+    console.log('Custom plugin applied');
+  },
+  destroy: () => {
+    console.log('Custom plugin destroyed');
+  }
+});
+
+// Remove plugins
+scrollInstance.removePlugin('custom-plugin');
+```
+
+## Multi-row and Multi-column Layout
+
+Scroll Seamless supports multi-row and multi-column layouts, which can be controlled via the `rows` and `cols` parameters:
+
+```jsx
+// React multi-row and multi-column example
+<ScrollSeamless
+  data={data}
+  direction="left"
+  rows={2}
+  cols={2}
+>
+  {(item, index, rowIndex, colIndex) => (
+    <div key={index}>
+      {item} (Row: {rowIndex}, Col: {colIndex})
+    </div>
+  )}
+</ScrollSeamless>
+```
+
+```vue
+<!-- Vue multi-row and multi-column example -->
+<ScrollSeamless
+  :data="data"
+  direction="left"
+  :rows="2"
+  :cols="2"
+>
+  <template #default="{ item, index, rowIndex, colIndex }">
+    <div :key="index">
+      {{ item }} (Row: {{ rowIndex }}, Col: {{ colIndex }})
+    </div>
+  </template>
+</ScrollSeamless>
 ```
 
 ### React Custom Mode Example
@@ -212,7 +344,6 @@ const CustomScrollDemo = () => {
         data={items}
         direction="right"
         step={0.5}
-        custom={true}
         hoverStop={true}
       >
         {/* Completely custom content structure */}
@@ -240,13 +371,6 @@ const CustomScrollDemo = () => {
   );
 };
 ```
-
-### Notes
-
-1. **Slot content must be pure static structure**: custom mode does not automatically pass item/index parameters
-2. **Content will be copied twice**: for seamless scrolling effect
-3. **Custom content dimensions**: will directly affect the scroll area size and effect
-4. **Performance considerations**: complex structures will affect rendering performance, recommend reasonable control of content complexity
 
 ## Virtual Scrolling (Large Data Optimization)
 
@@ -455,11 +579,3 @@ Example:
 ```js
 import { getLegalDirection, getContentTransform, getContentStyle, fireEvent } from 'scroll-seamless/core/utils';
 ```
-
-## Event System
-
-It is recommended to use the `fireEvent` utility for custom event dispatch, making plugin/extension integration easier.
-
-## License
-
-BSD-3-Clause 
