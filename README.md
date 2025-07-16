@@ -4,30 +4,68 @@
 [![npm downloads](https://img.shields.io/npm/dm/scroll-seamless.svg)](https://www.npmjs.com/package/scroll-seamless)
 [![License](https://img.shields.io/npm/l/scroll-seamless.svg)](https://github.com/chao921125/scroll-seamless/blob/main/LICENSE)
 
-一个支持 JavaScript、Vue3 和 React 的无缝滚动库。
+> 一个高性能、功能丰富的无缝滚动库，支持 JavaScript、Vue3 和 React，适用于各种滚动展示场景。
+
+## 简介
+
+Scroll Seamless 是一个专为现代 Web 应用设计的无缝滚动库，提供了流畅的滚动体验和丰富的自定义选项。无论是简单的文本轮播，还是复杂的数据展示，Scroll Seamless 都能满足您的需求。支持多种框架集成，性能优化，以及大数据量处理。
+
+本库专注于提供高性能、低内存占用的滚动解决方案，通过优化的渲染策略和内存管理，即使在移动设备上也能保持流畅的滚动体验。同时，丰富的 API 和插件系统使其能够适应各种复杂场景的需求。
 
 ## 特性
 
-- 🚀 高性能无缝滚动
-- 🎯 支持水平/垂直方向
-- 🎨 统一的渲染模式（作用域插槽/函数式 children）
-- 🖼️ 支持多行多列布局
-- 🔄 真正的无缝衔接，无空白间隙
-- 🎛️ 丰富的配置选项
-- 🖱️ 鼠标悬停暂停
-- 🎡 滚轮控制
-- 📱 响应式设计
-- 🔧 TypeScript 支持
-- 🔌 插件系统支持
-- 📊 内置性能监控
-- ♿ 无障碍功能支持
-- ⚡ 虚拟滚动支持（大数据量优化）
-- 🎨 完全自定义模式（custom 模式）
+### 核心功能
+
+- 🚀 **高性能无缝滚动** - 优化的渲染和动画，确保流畅的滚动体验
+- 🎯 **多方向支持** - 灵活支持上/下/左/右四个方向的滚动
+- 🔄 **真正的无缝衔接** - 精确计算确保无空白间隙，完美循环
+- 🧩 **多行多列布局** - 支持复杂的网格布局，满足多样化展示需求
+
+### 用户体验
+
+- 🖱️ **交互控制** - 鼠标悬停暂停、滚轮控制等交互功能
+- 📱 **响应式设计** - 自适应不同屏幕尺寸，完美适配移动设备
+- ♿ **无障碍功能** - 支持屏幕阅读器和键盘导航，提升可访问性
+- 🎛️ **丰富的配置选项** - 可定制的速度、间隔、动画效果等参数
+
+### 开发友好
+
+- 🎨 **统一的渲染模式** - 在 React（函数式 children）和 Vue（作用域插槽）中保持一致的 API
+- 🔧 **TypeScript 支持** - 完整的类型定义，提供良好的开发体验
+- 🔌 **插件系统** - 可扩展的插件架构，轻松添加自定义功能
+- 📊 **性能监控** - 内置性能分析工具，帮助优化应用
+
+### 高级特性
+
+- ⚡ **虚拟滚动** - 高效处理大数据量（10000+ 条），显著提升性能
+- 🧩 **自定义渲染** - 完全控制每个滚动项的渲染方式
+- 🔄 **数据驱动更新** - 响应式数据变化，自动更新滚动内容
+- 🛠️ **丰富的 API** - 提供全面的方法和事件，满足复杂场景需求
 
 ## 安装
 
+### NPM
+
 ```bash
 npm install scroll-seamless
+```
+
+### Yarn
+
+```bash
+yarn add scroll-seamless
+```
+
+### PNPM
+
+```bash
+pnpm add scroll-seamless
+```
+
+### CDN
+
+```html
+<script src="https://unpkg.com/scroll-seamless/dist/scroll-seamless.min.js"></script>
 ```
 
 ## 使用方法
@@ -197,100 +235,6 @@ scrollInstance.setOptions({
 });
 ```
 
-### 多行多列布局示例
-
-```vue
-<template>
-  <div style="width: 600px; height: 200px;">
-    <ScrollSeamless
-      ref="scrollRef"
-      :data="items"
-      direction="left"
-      :step="1"
-      :rows="2"
-      :cols="2"
-      :hover-stop="true"
-    >
-      <template #default="{ item, index, rowIndex, colIndex }">
-        <div class="grid-item">
-          <span>{{ item }}</span>
-          <small>行: {{ rowIndex }}, 列: {{ colIndex }}</small>
-        </div>
-      </template>
-    </ScrollSeamless>
-  </div>
-</template>
-
-<script>
-import { ref } from "vue";
-import { ScrollSeamless } from "scroll-seamless/vue";
-
-export default {
-  components: { ScrollSeamless },
-  setup() {
-    const scrollRef = ref(null);
-    const items = ref(Array.from({ length: 20 }, (_, i) => `Item ${i + 1}`));
-    return { scrollRef, items };
-  },
-};
-</script>
-
-<style scoped>
-.grid-item {
-  padding: 15px;
-  margin: 5px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-</style>
-```
-
-### 使用插件
-
-```javascript
-import { ScrollSeamless, PerformancePlugin } from "scroll-seamless/core";
-import { VirtualScrollPlugin } from "scroll-seamless/plugins";
-
-// 创建性能监控插件
-const performancePlugin = new PerformancePlugin({
-  fps: true,
-  memory: true,
-  onUpdate: (metrics) => {
-    console.log('Performance metrics:', metrics);
-  }
-});
-
-// 创建虚拟滚动插件（用于大数据集）
-const virtualScrollPlugin = new VirtualScrollPlugin({
-  itemHeight: 30,
-  overscan: 5
-});
-
-// 初始化滚动实例并添加插件
-const scrollInstance = new ScrollSeamless(container, {
-  data: Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`),
-  plugins: [performancePlugin, virtualScrollPlugin]
-});
-
-// 也可以在实例创建后添加插件
-scrollInstance.addPlugin({
-  id: 'custom-plugin',
-  apply: (instance) => {
-    // 自定义插件逻辑
-    console.log('Custom plugin applied');
-  },
-  destroy: () => {
-    console.log('Custom plugin destroyed');
-  }
-});
-
-// 移除插件
-scrollInstance.removePlugin('custom-plugin');
-```
-
 ## 多行多列布局
 
 Scroll Seamless 支持多行多列布局，可以通过 `rows` 和 `cols` 参数来控制：
@@ -325,54 +269,6 @@ Scroll Seamless 支持多行多列布局，可以通过 `rows` 和 `cols` 参数
     </div>
   </template>
 </ScrollSeamless>
-```
-
-### React 自定义模式示例
-
-```jsx
-import React, { useRef } from "react";
-import { ScrollSeamless } from "scroll-seamless/react";
-
-const CustomScrollDemo = () => {
-  const scrollRef = useRef(null);
-  const items = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"];
-
-  return (
-    <div style={{ width: "600px", height: "80px" }}>
-      <ScrollSeamless
-        ref={scrollRef}
-        data={items}
-        direction="right"
-        step={0.5}
-        hoverStop={true}
-      >
-        {/* 完全自定义内容结构 */}
-        <div style={{ display: "flex", gap: "10px" }}>
-          {items.map((item, index) => (
-            <div
-              key={index}
-              style={{
-                padding: "15px",
-                background: "linear-gradient(45deg, #667eea, #764ba2)",
-                borderRadius: "10px",
-                color: "white",
-                fontWeight: "bold",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <span style={{ fontSize: "12px", opacity: 0.8 }}>O</span>
-              <span>{item}</span>
-              <span style={{ fontSize: "12px", opacity: 0.8 }}>P</span>
-            </div>
-          ))}
-        </div>
-      </ScrollSeamless>
-    </div>
-  );
-};
 ```
 
 ## 虚拟滚动（大数据量优化）
@@ -414,36 +310,7 @@ const scrollInstance = new ScrollSeamless(container, {
 - 虚拟滚动：只渲染可视区域 + 缓冲区的节点
 - 性能提升：显著减少内存占用和渲染时间
 
-## 统一渲染模式
-
-Scroll Seamless 采用统一的渲染模式，确保 React 和 Vue 组件的一致性：
-
-### React 函数式 Children
-
-```jsx
-<ScrollSeamless data={data}>
-  {(item, index) => <div key={index}>{item}</div>}
-</ScrollSeamless>
-```
-
-### Vue 作用域插槽
-
-```vue
-<ScrollSeamless :data="data">
-  <template #default="{ item, index }">
-    <div :key="index">{{ item }}</div>
-  </template>
-</ScrollSeamless>
-```
-
-这种模式的优势：
-
-- **一致性**：React 和 Vue 组件使用相同的渲染逻辑
-- **灵活性**：开发者可以完全控制每个项目的渲染
-- **维护性**：组件内部统一管理 data 数组的渲染
-- **扩展性**：易于添加新的渲染功能
-
-## 样式隔离与自定义
+## 自定义样式
 
 Scroll Seamless 组件核心样式只保证功能性（布局、溢出、内容复制），所有视觉样式均可由用户自定义。
 
@@ -502,98 +369,44 @@ Scroll Seamless 组件核心样式只保证功能性（布局、溢出、内容�
 </ScrollSeamless>
 ```
 
-```css
-.my-scroll-root {
-  background: #fafafa;
-}
-.my-content {
-  padding: 8px 0;
-}
-.my-item {
-  color: #1976d2;
-  font-weight: bold;
-}
-```
+## 浏览器兼容性
 
----
+Scroll Seamless 支持所有现代浏览器，包括：
 
-## API 文档
+| Chrome | Firefox | Safari | Edge | IE   | Opera |
+| ------ | ------- | ------ | ---- | ---- | ----- |
+| 60+    | 60+     | 12+    | 79+  | 11+  | 50+   |
 
-### 组件 Props
+## 常见问题解答
 
-| 属性          | 类型                                  | 默认值   | 说明                    |
-| ------------- | ------------------------------------- | -------- | ----------------------- |
-| `data`        | `string[]`                            | `[]`     | 滚动数据数组            |
-| `direction`   | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | 滚动方向（上/下/左/右） |
-| `step`        | `number`                              | `1`      | 每步移动像素            |
-| `stepWait`    | `number`                              | `0`      | 每步等待时间(ms)        |
-| `delay`       | `number`                              | `0`      | 初始延迟时间(ms)        |
-| `hoverStop`   | `boolean`                             | `true`   | 鼠标悬停是否暂停        |
-| `wheelEnable` | `boolean`                             | `false`  | 是否启用滚轮控制        |
-| `custom`      | `boolean`                             | `false`  | 是否使用自定义内容      |
-| `plugins`     | `ScrollSeamlessPlugin[]`              | `[]`     | 插件数组                |
-| `onEvent`     | `(event, data) => void`               | -        | 事件回调                |
+### Q: 如何在动态数据变化时更新滚动内容？
 
-### 组件方法
+A: 当数据发生变化时，调用组件实例的 `updateData()` 方法即可重新渲染内容。
 
-| 方法           | 参数      | 返回值 | 说明     |
-| -------------- | --------- | ------ | -------- |
-| `start()`      | -         | `void` | 开始滚动 |
-| `stop()`       | -         | `void` | 停止滚动 |
-| `destroy()`    | -         | `void` | 销毁实例 |
-| `updateData()` | -         | `void` | 更新数据 |
-| `setOptions()` | `options` | `void` | 设置选项 |
+### Q: 如何控制滚动速度？
 
-### 事件类型
+A: 通过 `step` 参数控制每一步的像素移动量，数值越大滚动越快。
 
-| 事件          | 触发时机       | 回调参数                                    |
-| ------------- | -------------- | ------------------------------------------- |
-| `start`       | 开始滚动时     | `{ type, direction, position, cycleCount }` |
-| `stop`        | 停止滚动时     | `{ type, direction, position, cycleCount }` |
-| `destroy`     | 销毁实例时     | `{ type, direction, position, cycleCount }` |
-| `update`      | 数据更新时     | `{ type, direction, position, cycleCount }` |
-| `cycle`       | 完成一次循环时 | `{ type, direction, position, cycleCount }` |
-| `reach-start` | 滚动到起点时   | `{ type, direction, position, cycleCount }` |
-| `reach-end`   | 滚动到终点时   | `{ type, direction, position, cycleCount }` |
+### Q: 如何在特定条件下暂停滚动？
 
-### 虚拟滚动插件配置
+A: 除了 `hoverStop` 参数外，您还可以随时调用 `stop()` 和 `start()` 方法来控制滚动状态。
 
-| 属性         | 类型                          | 默认值 | 说明                       |
-| ------------ | ----------------------------- | ------ | -------------------------- |
-| `enabled`    | `boolean`                     | `true` | 是否启用虚拟滚动           |
-| `itemWidth`  | `number`                      | `200`  | 每个 item 宽度（水平滚动） |
-| `itemHeight` | `number`                      | `40`   | 每个 item 高度（垂直滚动） |
-| `bufferSize` | `number`                      | `5`    | 缓冲区大小                 |
-| `onRender`   | `(start, end, count) => void` | -      | 渲染回调                   |
+### Q: 如何处理大量数据的性能问题？
 
-## 方向参数说明
+A: 对于大数据量场景，请使用虚拟滚动插件，它可以显著减少 DOM 节点数量，提高性能。
 
-- `direction` 仅支持 `'left' | 'right' | 'up' | 'down'`，默认值为 `'left'`，与源码类型完全一致。
-- 推荐通过 core 导出的 `DEFAULT_OPTIONS`、类型、工具函数进行多端复用。
+## 文档
 
-## 工具函数与高级用法
-
-可直接从 `scroll-seamless/core/utils` 导入以下工具函数：
-
-- `getLegalDirection(direction)`：方向合法性校验
-- `getContentTransform(direction, position, totalLength, isSecondContent)`：内容 transform 计算
-- `getContentStyle(direction)`：内容区样式生成
-- `fireEvent(handler, event, payload)`：统一事件分发
-
-示例：
-
-```js
-import {
-  getLegalDirection,
-  getContentTransform,
-  getContentStyle,
-  fireEvent,
-} from "scroll-seamless/core/utils";
-```
-
-## 事件系统
-
-推荐通过 `fireEvent` 工具函数分发自定义事件，便于插件/扩展统一接入。
+- [快速入门](./docs/QUICK-START.md) - 快速上手指南
+- [API 文档](./docs/API.md) - 详细的 API 参考
+- [API 文档（英文）](./docs/API.en.md) - API 参考（英文版）
+- [React 集成指南](./docs/REACT.md) - React 组件详细使用说明
+- [Vue 集成指南](./docs/VUE.md) - Vue 组件详细使用说明
+- [贡献指南](./docs/CONTRIBUTING.md) - 如何参与项目开发
+- [贡献指南（英文）](./docs/CONTRIBUTING.en.md) - 如何参与项目开发（英文版）
+- [安全政策](./docs/SECURITY.md) - 安全漏洞报告流程
+- [插件系统](./docs/PLUGINS.md) - 插件系统使用和开发指南
+- [虚拟滚动](./docs/VIRTUAL-SCROLL.md) - 虚拟滚动功能详解
 
 ## 许可证
 
