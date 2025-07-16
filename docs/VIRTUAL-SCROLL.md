@@ -39,12 +39,14 @@ import { VirtualScrollPlugin } from "scroll-seamless/plugins";
 // 创建虚拟滚动插件
 const virtualScrollPlugin = new VirtualScrollPlugin({
   enabled: true,
-  itemWidth: 200,  // 每个项目的宽度（水平滚动时使用）
-  itemHeight: 40,  // 每个项目的高度（垂直滚动时使用）
-  bufferSize: 5,   // 可视区域外预渲染的项目数量
+  itemWidth: 200, // 每个项目的宽度（水平滚动时使用）
+  itemHeight: 40, // 每个项目的高度（垂直滚动时使用）
+  bufferSize: 5, // 可视区域外预渲染的项目数量
   onRender: (startIndex, endIndex, visibleCount) => {
-    console.log(`渲染范围: ${startIndex} - ${endIndex}, 可见数量: ${visibleCount}`);
-  }
+    console.log(
+      `渲染范围: ${startIndex} - ${endIndex}, 可见数量: ${visibleCount}`
+    );
+  },
 });
 
 // 使用插件创建滚动实例
@@ -56,7 +58,7 @@ const scrollInstance = new ScrollSeamless(container, {
     if (event === "virtual-scroll-update") {
       console.log("虚拟滚动更新:", data);
     }
-  }
+  },
 });
 ```
 
@@ -70,13 +72,13 @@ import { VirtualScrollPlugin } from "scroll-seamless/plugins";
 const VirtualScrollDemo = () => {
   const scrollRef = useRef(null);
   const data = Array.from({ length: 10000 }, (_, i) => `Item ${i + 1}`);
-  
+
   // 创建虚拟滚动插件
   const virtualScrollPlugin = new VirtualScrollPlugin({
     itemWidth: 200,
-    bufferSize: 10
+    bufferSize: 10,
   });
-  
+
   return (
     <div style={{ width: "600px", height: "80px" }}>
       <ScrollSeamless
@@ -146,21 +148,21 @@ export default {
   setup() {
     const scrollRef = ref(null);
     const data = Array.from({ length: 10000 }, (_, i) => `Item ${i + 1}`);
-    
+
     // 创建虚拟滚动插件
     const virtualScrollPlugin = new VirtualScrollPlugin({
       itemWidth: 200,
-      bufferSize: 10
+      bufferSize: 10,
     });
-    
+
     const plugins = [virtualScrollPlugin];
-    
-    return { 
-      scrollRef, 
+
+    return {
+      scrollRef,
       data,
-      plugins
+      plugins,
     };
-  }
+  },
 };
 </script>
 ```
@@ -176,7 +178,7 @@ const virtualScrollPlugin = new VirtualScrollPlugin({
   getItemSize: (item, index) => {
     // 根据项目内容或索引计算大小
     return item.length > 10 ? 60 : 40;
-  }
+  },
 });
 ```
 
@@ -185,14 +187,16 @@ const virtualScrollPlugin = new VirtualScrollPlugin({
 ```javascript
 const virtualScrollPlugin = new VirtualScrollPlugin({
   onRender: (startIndex, endIndex, visibleCount) => {
-    console.log(`渲染范围: ${startIndex} - ${endIndex}, 可见数量: ${visibleCount}`);
-    
+    console.log(
+      `渲染范围: ${startIndex} - ${endIndex}, 可见数量: ${visibleCount}`
+    );
+
     // 可以在这里执行额外的逻辑，如数据懒加载
     if (endIndex > data.length - 20) {
       // 接近末尾，加载更多数据
       loadMoreData();
     }
-  }
+  },
 });
 ```
 
@@ -202,7 +206,7 @@ const virtualScrollPlugin = new VirtualScrollPlugin({
 // 创建插件后可以动态更新配置
 virtualScrollPlugin.updateConfig({
   bufferSize: 20,
-  itemHeight: 50
+  itemHeight: 50,
 });
 ```
 
@@ -210,48 +214,52 @@ virtualScrollPlugin.updateConfig({
 
 ### VirtualScrollPlugin 选项
 
-| 选项 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `enabled` | `boolean` | `true` | 是否启用虚拟滚动 |
-| `itemWidth` | `number` | `200` | 每个项目的宽度（水平滚动时使用） |
-| `itemHeight` | `number` | `40` | 每个项目的高度（垂直滚动时使用） |
-| `bufferSize` | `number` | `5` | 可视区域外预渲染的项目数量 |
-| `getItemSize` | `(item, index) => number` | - | 动态计算项目大小的函数 |
-| `onRender` | `(startIndex, endIndex, visibleCount) => void` | - | 渲染回调函数 |
+| 选项          | 类型                                           | 默认值 | 说明                             |
+| ------------- | ---------------------------------------------- | ------ | -------------------------------- |
+| `enabled`     | `boolean`                                      | `true` | 是否启用虚拟滚动                 |
+| `itemWidth`   | `number`                                       | `200`  | 每个项目的宽度（水平滚动时使用） |
+| `itemHeight`  | `number`                                       | `40`   | 每个项目的高度（垂直滚动时使用） |
+| `bufferSize`  | `number`                                       | `5`    | 可视区域外预渲染的项目数量       |
+| `getItemSize` | `(item, index) => number`                      | -      | 动态计算项目大小的函数           |
+| `onRender`    | `(startIndex, endIndex, visibleCount) => void` | -      | 渲染回调函数                     |
 
 ### VirtualScrollPlugin 方法
 
-| 方法 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `updateConfig` | `Partial<VirtualScrollPluginOptions>` | `void` | 更新插件配置 |
-| `getVisibleRange` | - | `{ start: number, end: number }` | 获取当前可见范围的索引 |
-| `scrollToIndex` | `index: number` | `void` | 滚动到指定索引的项目 |
+| 方法              | 参数                                  | 返回值                           | 说明                   |
+| ----------------- | ------------------------------------- | -------------------------------- | ---------------------- |
+| `updateConfig`    | `Partial<VirtualScrollPluginOptions>` | `void`                           | 更新插件配置           |
+| `getVisibleRange` | -                                     | `{ start: number, end: number }` | 获取当前可见范围的索引 |
+| `scrollToIndex`   | `index: number`                       | `void`                           | 滚动到指定索引的项目   |
 
 ### 事件
 
 当使用虚拟滚动插件时，Scroll Seamless 实例会触发以下额外事件：
 
-| 事件 | 触发时机 | 回调参数 |
-|------|----------|----------|
+| 事件                    | 触发时机           | 回调参数                                 |
+| ----------------------- | ------------------ | ---------------------------------------- |
 | `virtual-scroll-update` | 虚拟滚动视图更新时 | `{ startIndex, endIndex, visibleCount }` |
-| `virtual-scroll-resize` | 容器大小变化时 | `{ width, height, visibleCount }` |
+| `virtual-scroll-resize` | 容器大小变化时     | `{ width, height, visibleCount }`        |
 
 ## 性能优化建议
 
 1. **设置合适的 bufferSize**：
+
    - 太小：可能导致滚动时出现白屏
    - 太大：会增加不必要的渲染负担
    - 建议值：5-10 之间，根据项目大小和滚动速度调整
 
 2. **固定项目大小**：
+
    - 如果可能，尽量使用固定大小的项目
    - 这样可以避免频繁重新计算布局
 
 3. **避免复杂的项目内容**：
+
    - 简化每个项目的 DOM 结构
    - 减少深层嵌套和复杂的样式计算
 
 4. **使用 key**：
+
    - 始终为列表项提供稳定的 key
    - 避免使用索引作为 key，特别是当列表项可能重新排序时
 
@@ -283,4 +291,4 @@ A: 是的，虚拟滚动插件支持所有四个方向（上、下、左、右�
 
 ## 许可证
 
-BSD-3-Clause 
+BSD-3-Clause
