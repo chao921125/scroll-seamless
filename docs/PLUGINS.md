@@ -89,32 +89,23 @@ interface ScrollSeamlessPlugin {
 
 ## 内置插件
 
-### 性能监控插件
+Scroll Seamless 提供了几个内置插件，用于增强滚动功能和性能。
 
-性能监控插件可以帮助您监控滚动性能，包括 FPS（每秒帧数）和内存使用情况。
+### 性能监控插件 (PerformancePlugin)
 
-```javascript
-import { ScrollSeamless, PerformancePlugin } from "scroll-seamless/core";
+性能监控插件可以帮助您监控滚动性能，包括 FPS（每秒帧数）和内存使用情况。这对于优化大型应用程序或调试性能问题非常有用。
 
-// 创建性能监控插件
-const performancePlugin = new PerformancePlugin({
-  enabled: true,       // 是否启用
-  fps: true,           // 是否监控 FPS
-  memory: true,        // 是否监控内存使用
-  onUpdate: (metrics) => {
-    console.log('性能指标:', metrics);
-    // metrics 包含 fps 和 memory 信息
-  }
-});
+#### 选项
 
-// 使用插件
-const scrollInstance = new ScrollSeamless(container, {
-  data: data,
-  plugins: [performancePlugin]
-});
-```
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | `boolean` | `true` | 是否启用性能监控 |
+| `fps` | `boolean` | `true` | 是否监控帧率 |
+| `memory` | `boolean` | `false` | 是否监控内存使用（仅 Chrome 支持） |
+| `interval` | `number` | `1000` | 更新间隔（毫秒） |
+| `onUpdate` | `(metrics: PerformanceMetrics) => void` | - | 指标更新回调 |
 
-性能指标包括：
+#### 性能指标类型
 
 ```typescript
 interface PerformanceMetrics {
@@ -128,12 +119,77 @@ interface PerformanceMetrics {
     renderTime: number;        // 渲染时间
     animationTime: number;     // 动画时间
   };
+  elements?: {                 // DOM 元素统计
+    total: number;             // 总元素数量
+    visible: number;           // 可见元素数量
+  };
 }
 ```
 
-### 无障碍插件
+#### 使用示例
 
-无障碍插件为滚动内容添加了无障碍支持，使其对屏幕阅读器和键盘导航更加友好。
+```javascript
+import { ScrollSeamless, PerformancePlugin } from "scroll-seamless/core";
+
+// 创建性能监控插件
+const performancePlugin = new PerformancePlugin({
+  enabled: true,       // 是否启用
+  fps: true,           // 是否监控 FPS
+  memory: true,        // 是否监控内存使用
+  interval: 2000,      // 每 2 秒更新一次
+  onUpdate: (metrics) => {
+    console.log('性能指标:', metrics);
+    console.log(`FPS: ${metrics.fps.toFixed(2)}`);
+    
+    if (metrics.memory) {
+      const usedMB = (metrics.memory.usedJSHeapSize / 1048576).toFixed(2);
+      const totalMB = (metrics.memory.totalJSHeapSize / 1048576).toFixed(2);
+      console.log(`内存使用: ${usedMB}MB / ${totalMB}MB`);
+    }
+    
+    if (metrics.elements) {
+      console.log(`DOM 元素: ${metrics.elements.visible} / ${metrics.elements.total}`);
+    }
+  }
+});
+
+// 使用插件
+const scrollInstance = new ScrollSeamless(container, {
+  data: data,
+  plugins: [performancePlugin]
+});
+
+// 获取性能数据
+const metrics = scrollInstance.getPerformance();
+```
+
+#### 方法
+
+| 方法 | 参数 | 返回值 | 说明 |
+|------|------|--------|------|
+| `getMetrics()` | - | `PerformanceMetrics` | 获取当前性能指标 |
+| `startMonitoring()` | - | `void` | 开始监控 |
+| `stopMonitoring()` | - | `void` | 停止监控 |
+| `setOptions(options)` | `Partial<PerformancePluginOptions>` | `void` | 更新插件选项 |
+
+### 无障碍插件 (AccessibilityPlugin)
+
+无障碍插件为滚动内容添加了无障碍支持，使其对屏幕阅读器和键盘导航更加友好。这对于创建符合 WCAG 标准的应用程序非常重要。
+
+#### 选项
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | `boolean` | `true` | 是否启用无障碍功能 |
+| `ariaLabel` | `string` | `'滚动内容'` | ARIA 标签 |
+| `ariaLive` | `'off' \| 'polite' \| 'assertive'` | `'polite'` | ARIA 实时区域策略 |
+| `keyboardControl` | `boolean` | `true` | 是否启用键盘控制 |
+| `focusable` | `boolean` | `true` | 内容是否可聚焦 |
+| `announceItems` | `boolean` | `true` | 是否朗读新项目 |
+| `pauseOnFocus` | `boolean` | `true` | 聚焦时是否暂停 |
+| `keyboardShortcuts` | `Record<string, () => void>` | - | 自定义键盘快捷键 |
+
+#### 使用示例
 
 ```javascript
 import { ScrollSeamless, AccessibilityPlugin } from "scroll-seamless/core";
@@ -146,7 +202,12 @@ const accessibilityPlugin = new AccessibilityPlugin({
   keyboardControl: true,        // 是否启用键盘控制
   focusable: true,              // 内容是否可聚焦
   announceItems: true,          // 是否朗读新项目
-  pauseOnFocus: true            // 聚焦时是否暂停
+  pauseOnFocus: true,           // 聚焦时是否暂停
+  keyboardShortcuts: {          // 自定义键盘快捷键
+    'Space': () => scrollInstance.isRunning() ? scrollInstance.stop() : scrollInstance.start(),
+    'ArrowLeft': () => scrollInstance.setOptions({ direction: 'left' }),
+    'ArrowRight': () => scrollInstance.setOptions({ direction: 'right' })
+  }
 });
 
 // 使用插件
@@ -155,6 +216,63 @@ const scrollInstance = new ScrollSeamless(container, {
   plugins: [accessibilityPlugin]
 });
 ```
+
+#### 方法
+
+| 方法 | 参数 | 返回值 | 说明 |
+|------|------|--------|------|
+| `setAriaLabel(label)` | `string` | `void` | 设置 ARIA 标签 |
+| `setAriaLive(value)` | `'off' \| 'polite' \| 'assertive'` | `void` | 设置 ARIA 实时区域策略 |
+| `enableKeyboardControl(enable)` | `boolean` | `void` | 启用或禁用键盘控制 |
+| `addKeyboardShortcut(key, handler)` | `string, () => void` | `void` | 添加键盘快捷键 |
+| `removeKeyboardShortcut(key)` | `string` | `void` | 移除键盘快捷键 |
+
+### 虚拟滚动插件 (VirtualScrollPlugin)
+
+虚拟滚动插件用于优化大数据量场景下的性能，只渲染可见区域和缓冲区的内容。详细信息请参考 [虚拟滚动文档](./VIRTUAL-SCROLL.md)。
+
+#### 选项
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | `boolean` | `true` | 是否启用虚拟滚动 |
+| `itemWidth` | `number` | `200` | 每个项目的宽度（水平滚动时使用） |
+| `itemHeight` | `number` | `40` | 每个项目的高度（垂直滚动时使用） |
+| `bufferSize` | `number` | `5` | 可视区域外预渲染的项目数量 |
+| `getItemSize` | `(item, index) => number` | - | 动态计算项目大小的函数 |
+| `onRender` | `(startIndex, endIndex, visibleCount) => void` | - | 渲染回调函数 |
+
+#### 使用示例
+
+```javascript
+import { ScrollSeamless } from "scroll-seamless/core";
+import { VirtualScrollPlugin } from "scroll-seamless/plugins";
+
+// 创建虚拟滚动插件
+const virtualScrollPlugin = new VirtualScrollPlugin({
+  enabled: true,
+  itemWidth: 200,
+  itemHeight: 40,
+  bufferSize: 10,
+  onRender: (startIndex, endIndex, visibleCount) => {
+    console.log(`渲染范围: ${startIndex} - ${endIndex}, 可见数量: ${visibleCount}`);
+  }
+});
+
+// 使用插件
+const scrollInstance = new ScrollSeamless(container, {
+  data: Array.from({ length: 10000 }, (_, i) => `Item ${i + 1}`),
+  plugins: [virtualScrollPlugin]
+});
+```
+
+#### 方法
+
+| 方法 | 参数 | 返回值 | 说明 |
+|------|------|--------|------|
+| `updateConfig(options)` | `Partial<VirtualScrollPluginOptions>` | `void` | 更新插件配置 |
+| `getVisibleRange()` | - | `{ start: number, end: number }` | 获取当前可见范围的索引 |
+| `scrollToIndex(index)` | `number` | `void` | 滚动到指定索引的项目 |
 
 ## 使用插件
 
@@ -196,7 +314,53 @@ scrollInstance.removePlugin('custom-plugin');
 
 ## 创建自定义插件
 
-创建自定义插件只需要实现 `ScrollSeamlessPlugin` 接口：
+### 基本步骤
+
+创建自定义插件需要遵循以下步骤：
+
+1. **定义插件接口**：实现 `ScrollSeamlessPlugin` 接口
+2. **实现 `apply` 方法**：在此方法中添加自定义功能
+3. **实现 `destroy` 方法**：清理资源，避免内存泄漏
+4. **注册插件**：将插件添加到滚动实例
+
+### 简单插件示例
+
+最简单的插件只需要实现 `id` 和 `apply` 方法：
+
+```javascript
+// 创建简单的日志插件
+const loggerPlugin = {
+  id: 'logger-plugin',
+  
+  apply: (instance) => {
+    console.log('日志插件已应用');
+    
+    // 保存原始事件处理器
+    const originalOnEvent = instance.options.onEvent;
+    
+    // 扩展事件处理
+    instance.options.onEvent = (event, data) => {
+      // 记录所有事件
+      console.log(`[Logger] Event: ${event}`, data);
+      
+      // 调用原始事件处理器
+      if (originalOnEvent) {
+        originalOnEvent(event, data);
+      }
+    };
+  }
+};
+
+// 使用简单插件
+const scrollInstance = new ScrollSeamless(container, {
+  data: data,
+  plugins: [loggerPlugin]
+});
+```
+
+### 完整插件示例
+
+一个完整的插件应该包含 `id`、`apply` 和 `destroy` 方法：
 
 ```javascript
 // 创建自定义插件
@@ -204,11 +368,14 @@ const myCustomPlugin = {
   id: 'my-custom-plugin',
   
   // 应用插件
-  apply: (instance) => {
+  apply: function(instance) {
     console.log('自定义插件已应用');
     
+    // 保存实例引用
+    this.instance = instance;
+    
     // 保存原始事件处理器
-    const originalOnEvent = instance.options.onEvent;
+    this.originalOnEvent = instance.options.onEvent;
     
     // 扩展事件处理
     instance.options.onEvent = (event, data) => {
@@ -219,14 +386,15 @@ const myCustomPlugin = {
       }
       
       // 调用原始事件处理器
-      if (originalOnEvent) {
-        originalOnEvent(event, data);
+      if (this.originalOnEvent) {
+        this.originalOnEvent(event, data);
       }
     };
     
     // 添加自定义方法
     instance._customMethod = () => {
       console.log('执行自定义方法');
+      return '自定义方法结果';
     };
     
     // 监听 DOM 事件
@@ -241,9 +409,24 @@ const myCustomPlugin = {
     console.log('自定义插件已销毁');
     
     // 清理事件监听器
-    if (this.clickHandler) {
-      instance.container.removeEventListener('click', this.clickHandler);
+    if (this.clickHandler && this.instance) {
+      this.instance.container.removeEventListener('click', this.clickHandler);
     }
+    
+    // 移除自定义方法
+    if (this.instance) {
+      delete this.instance._customMethod;
+    }
+    
+    // 恢复原始事件处理器
+    if (this.instance && this.originalOnEvent) {
+      this.instance.options.onEvent = this.originalOnEvent;
+    }
+    
+    // 清除引用
+    this.instance = null;
+    this.originalOnEvent = null;
+    this.clickHandler = null;
   }
 };
 
@@ -254,12 +437,13 @@ const scrollInstance = new ScrollSeamless(container, {
 });
 
 // 调用插件添加的方法
-scrollInstance._customMethod();
+const result = scrollInstance._customMethod();
+console.log(result); // 输出: 自定义方法结果
 ```
 
 ### 插件类模式
 
-对于更复杂的插件，可以使用类模式：
+对于更复杂的插件，推荐使用类模式，这样可以更好地组织代码和管理状态：
 
 ```javascript
 class AdvancedPlugin {
@@ -269,20 +453,36 @@ class AdvancedPlugin {
       ...options
     };
     this.id = 'advanced-plugin';
+    this.instance = null;
+    this.originalOnEvent = null;
+    this.eventHandlers = {};
   }
   
   get defaultOptions() {
     return {
       enabled: true,
       feature1: true,
-      feature2: false
+      feature2: false,
+      logLevel: 'info'
     };
   }
   
   apply(instance) {
     this.instance = instance;
-    console.log('高级插件已应用');
+    console.log(`[${this.options.logLevel}] 高级插件已应用`);
     
+    // 保存原始事件处理器
+    this.originalOnEvent = instance.options.onEvent;
+    
+    // 扩展事件处理
+    instance.options.onEvent = (event, data) => {
+      this.handleEvent(event, data);
+    };
+    
+    // 添加自定义方法
+    instance._advancedFeature = this.advancedFeature.bind(this);
+    
+    // 启用特性
     if (this.options.feature1) {
       this.enableFeature1();
     }
@@ -290,11 +490,46 @@ class AdvancedPlugin {
     if (this.options.feature2) {
       this.enableFeature2();
     }
+    
+    // 添加 DOM 事件监听器
+    this.eventHandlers.click = this.handleClick.bind(this);
+    instance.container.addEventListener('click', this.eventHandlers.click);
+  }
+  
+  handleEvent(event, data) {
+    // 处理事件
+    if (this.options.logLevel === 'debug') {
+      console.log(`[Advanced] Event: ${event}`, data);
+    }
+    
+    // 调用原始事件处理器
+    if (this.originalOnEvent) {
+      this.originalOnEvent(event, data);
+    }
+  }
+  
+  handleClick(event) {
+    console.log('容器被点击', event);
+    
+    // 执行自定义逻辑
+    if (this.options.feature1) {
+      this.triggerFeature1();
+    }
+  }
+  
+  advancedFeature(param) {
+    console.log(`执行高级特性，参数: ${param}`);
+    return `高级特性结果: ${param}`;
   }
   
   enableFeature1() {
     console.log('启用特性 1');
     // 实现特性 1...
+  }
+  
+  triggerFeature1() {
+    console.log('触发特性 1');
+    // 触发特性 1...
   }
   
   enableFeature2() {
@@ -304,21 +539,218 @@ class AdvancedPlugin {
   
   destroy() {
     console.log('高级插件已销毁');
+    
+    // 清理事件监听器
+    if (this.instance && this.eventHandlers.click) {
+      this.instance.container.removeEventListener('click', this.eventHandlers.click);
+    }
+    
+    // 移除自定义方法
+    if (this.instance) {
+      delete this.instance._advancedFeature;
+    }
+    
+    // 恢复原始事件处理器
+    if (this.instance && this.originalOnEvent) {
+      this.instance.options.onEvent = this.originalOnEvent;
+    }
+    
+    // 清除引用
     this.instance = null;
+    this.originalOnEvent = null;
+    this.eventHandlers = {};
   }
 }
 
 // 使用高级插件
 const advancedPlugin = new AdvancedPlugin({
   feature1: true,
-  feature2: true
+  feature2: true,
+  logLevel: 'debug'
 });
 
 const scrollInstance = new ScrollSeamless(container, {
   data: data,
   plugins: [advancedPlugin]
 });
+
+// 调用插件添加的方法
+const result = scrollInstance._advancedFeature('test');
+console.log(result); // 输出: 高级特性结果: test
 ```
+
+### 工厂函数模式
+
+对于需要配置的插件，可以使用工厂函数模式：
+
+```javascript
+// 插件工厂函数
+function createConfigurablePlugin(config) {
+  // 默认配置
+  const options = {
+    enabled: true,
+    feature: 'default',
+    debug: false,
+    ...config
+  };
+  
+  return {
+    id: `configurable-plugin-${options.feature}`,
+    
+    apply: function(instance) {
+      this.instance = instance;
+      
+      if (options.debug) {
+        console.log(`配置插件已应用，特性: ${options.feature}`);
+      }
+      
+      // 根据配置添加功能
+      switch (options.feature) {
+        case 'auto-pause':
+          this.setupAutoPause(instance);
+          break;
+        case 'keyboard-control':
+          this.setupKeyboardControl(instance);
+          break;
+        default:
+          console.log(`未知特性: ${options.feature}`);
+      }
+    },
+    
+    setupAutoPause: function(instance) {
+      // 设置自动暂停功能
+      let pauseTimer = null;
+      let resumeTimer = null;
+      
+      // 保存原始事件处理器
+      this.originalOnEvent = instance.options.onEvent;
+      
+      // 扩展事件处理
+      instance.options.onEvent = (event, data) => {
+        if (event === 'start') {
+          // 5秒后自动暂停
+          pauseTimer = setTimeout(() => {
+            instance.stop();
+            
+            // 2秒后自动恢复
+            resumeTimer = setTimeout(() => {
+              instance.start();
+            }, 2000);
+            
+          }, 5000);
+        } else if (event === 'stop') {
+          // 清除定时器
+          if (pauseTimer) {
+            clearTimeout(pauseTimer);
+            pauseTimer = null;
+          }
+          if (resumeTimer) {
+            clearTimeout(resumeTimer);
+            resumeTimer = null;
+          }
+        }
+        
+        // 调用原始事件处理器
+        if (this.originalOnEvent) {
+          this.originalOnEvent(event, data);
+        }
+      };
+      
+      // 保存定时器引用，以便在销毁时清理
+      this.timers = { pauseTimer, resumeTimer };
+    },
+    
+    setupKeyboardControl: function(instance) {
+      // 设置键盘控制功能
+      this.keyHandler = (event) => {
+        switch (event.key) {
+          case ' ': // 空格键
+            if (instance.isRunning()) {
+              instance.stop();
+            } else {
+              instance.start();
+            }
+            break;
+          case 'ArrowLeft':
+            instance.setOptions({ direction: 'left' });
+            break;
+          case 'ArrowRight':
+            instance.setOptions({ direction: 'right' });
+            break;
+          case 'ArrowUp':
+            instance.setOptions({ direction: 'up' });
+            break;
+          case 'ArrowDown':
+            instance.setOptions({ direction: 'down' });
+            break;
+        }
+      };
+      
+      // 添加键盘事件监听器
+      document.addEventListener('keydown', this.keyHandler);
+    },
+    
+    destroy: function() {
+      if (options.debug) {
+        console.log(`配置插件已销毁，特性: ${options.feature}`);
+      }
+      
+      // 清理资源
+      if (options.feature === 'auto-pause') {
+        // 清除定时器
+        if (this.timers) {
+          if (this.timers.pauseTimer) clearTimeout(this.timers.pauseTimer);
+          if (this.timers.resumeTimer) clearTimeout(this.timers.resumeTimer);
+        }
+        
+        // 恢复原始事件处理器
+        if (this.instance && this.originalOnEvent) {
+          this.instance.options.onEvent = this.originalOnEvent;
+        }
+      } else if (options.feature === 'keyboard-control') {
+        // 移除键盘事件监听器
+        if (this.keyHandler) {
+          document.removeEventListener('keydown', this.keyHandler);
+        }
+      }
+      
+      // 清除引用
+      this.instance = null;
+      this.originalOnEvent = null;
+      this.timers = null;
+      this.keyHandler = null;
+    }
+  };
+}
+
+// 使用工厂函数创建插件
+const autoPausePlugin = createConfigurablePlugin({
+  feature: 'auto-pause',
+  debug: true
+});
+
+const keyboardPlugin = createConfigurablePlugin({
+  feature: 'keyboard-control',
+  debug: true
+});
+
+// 使用插件
+const scrollInstance = new ScrollSeamless(container, {
+  data: data,
+  plugins: [autoPausePlugin, keyboardPlugin]
+});
+```
+
+### 插件开发最佳实践
+
+1. **唯一 ID**：确保插件 ID 是唯一的，避免冲突
+2. **保存原始引用**：修改实例属性或方法时，保存原始引用以便恢复
+3. **清理资源**：在 `destroy` 方法中清理所有资源，避免内存泄漏
+4. **错误处理**：添加适当的错误处理，避免插件错误影响核心功能
+5. **模块化设计**：将功能分解为小型、可重用的模块
+6. **文档注释**：为插件添加详细的文档注释，说明用途和用法
+7. **版本兼容性**：考虑与不同版本的 Scroll Seamless 的兼容性
+8. **性能优化**：避免在高频事件处理器中执行昂贵操作
 
 ## 插件通信
 
