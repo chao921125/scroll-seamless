@@ -108,12 +108,14 @@ const MyComponent = () => {
           </div>
         )}
       </ScrollSeamless>
-      
+
       {/* 控制按钮 */}
       <div className="controls">
         <button onClick={() => scrollRef.current?.start()}>开始</button>
         <button onClick={() => scrollRef.current?.stop()}>停止</button>
-        <button onClick={() => scrollRef.current?.updateData()}>更新数据</button>
+        <button onClick={() => scrollRef.current?.updateData()}>
+          更新数据
+        </button>
       </div>
     </div>
   );
@@ -152,7 +154,7 @@ const MyComponent = () => {
         </div>
       </template>
     </ScrollSeamless>
-    
+
     <!-- 控制按钮 -->
     <div class="controls">
       <button @click="startScroll">开始</button>
@@ -172,27 +174,27 @@ export default {
     const scrollRef = ref(null);
     const data = ref(["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]);
     const isScrolling = ref(true);
-    
+
     const startScroll = () => {
       scrollRef.value?.start();
     };
-    
+
     const stopScroll = () => {
       scrollRef.value?.stop();
     };
-    
+
     const updateScrollData = () => {
       data.value = [...data.value, "New Item " + (data.value.length + 1)];
       scrollRef.value?.updateData();
     };
 
-    return { 
-      scrollRef, 
-      data, 
+    return {
+      scrollRef,
+      data,
       isScrolling,
       startScroll,
       stopScroll,
-      updateScrollData
+      updateScrollData,
     };
   },
 };
@@ -215,7 +217,7 @@ const scrollInstance = new ScrollSeamless(container, {
   cols: 1,
   plugins: [], // 可选：添加自定义插件
   performance: { enabled: true }, // 启用性能监控
-  accessibility: { enabled: true } // 启用无障碍功能
+  accessibility: { enabled: true }, // 启用无障碍功能
 });
 
 // 控制方法
@@ -231,7 +233,7 @@ const isRunning = scrollInstance.isRunning();
 // 设置选项
 scrollInstance.setOptions({
   step: 2,
-  direction: "left"
+  direction: "left",
 });
 ```
 
@@ -241,12 +243,7 @@ Scroll Seamless 支持多行多列布局，可以通过 `rows` 和 `cols` 参数
 
 ```jsx
 // React 多行多列示例
-<ScrollSeamless
-  data={data}
-  direction="left"
-  rows={2}
-  cols={2}
->
+<ScrollSeamless data={data} direction="left" rows={2} cols={2}>
   {(item, index, rowIndex, colIndex) => (
     <div key={index}>
       {item} (行: {rowIndex}, 列: {colIndex})
@@ -257,12 +254,7 @@ Scroll Seamless 支持多行多列布局，可以通过 `rows` 和 `cols` 参数
 
 ```vue
 <!-- Vue 多行多列示例 -->
-<ScrollSeamless
-  :data="data"
-  direction="left"
-  :rows="2"
-  :cols="2"
->
+<ScrollSeamless :data="data" direction="left" :rows="2" :cols="2">
   <template #default="{ item, index, rowIndex, colIndex }">
     <div :key="index">
       {{ item }} (行: {{ rowIndex }}, 列: {{ colIndex }})
@@ -373,9 +365,9 @@ Scroll Seamless 组件核心样式只保证功能性（布局、溢出、内容�
 
 Scroll Seamless 支持所有现代浏览器，包括：
 
-| Chrome | Firefox | Safari | Edge | IE   | Opera |
-| ------ | ------- | ------ | ---- | ---- | ----- |
-| 60+    | 60+     | 12+    | 79+  | 11+  | 50+   |
+| Chrome | Firefox | Safari | Edge | IE  | Opera |
+| ------ | ------- | ------ | ---- | --- | ----- |
+| 60+    | 60+     | 12+    | 79+  | 11+ | 50+   |
 
 ## 常见问题解答
 
