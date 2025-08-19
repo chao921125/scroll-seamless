@@ -23,6 +23,7 @@ lerna-debug.log*
 .DS_Store
 .hbuilderx
 .kiro
+.vercel
 .vscode/*
 !.vscode/extensions.json
 .idea/*
