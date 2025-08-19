@@ -130,12 +130,14 @@ const ScrollSeamlessVue = defineComponent({
     // 暴露方法
     const start = () => { instance && instance.start(); };
     const stop = () => { instance && instance.stop(); };
+    const pause = () => { instance && instance.pause(); };
+    const resume = () => { instance && instance.resume(); };
     const destroy = () => { instance && instance.destroy(); };
     const updateData = () => { instance && instance.updateData(); };
     const setOptions = (options: Partial<ScrollSeamlessOptions>) => { instance && instance.setOptions(options); };
     const isRunning = () => instance ? instance.isRunning() : undefined;
 
-    expose({ start, stop, destroy, updateData, setOptions, isRunning });
+    expose({ start, stop, pause, resume, destroy, updateData, setOptions, isRunning });
 
     // 生命周期钩子
     onMounted(() => {

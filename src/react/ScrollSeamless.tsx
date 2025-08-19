@@ -15,6 +15,8 @@ export interface ScrollSeamlessProps extends ScrollSeamlessOptions {
 export interface ScrollSeamlessRef {
   start: () => void;
   stop: () => void;
+  pause: () => void;
+  resume: () => void;
   destroy: () => void;
   updateData: () => void;
   setOptions: (options: Partial<ScrollSeamlessOptions>) => void;
@@ -44,6 +46,8 @@ const ScrollSeamlessComponent = (
   useImperativeHandle(ref, () => ({
     start: () => instanceRef.current && instanceRef.current.start(),
     stop: () => instanceRef.current && instanceRef.current.stop(),
+    pause: () => instanceRef.current && instanceRef.current.pause(),
+    resume: () => instanceRef.current && instanceRef.current.resume(),
     destroy: () => instanceRef.current && instanceRef.current.destroy(),
     updateData: () => {
       instanceRef.current?.updateData();

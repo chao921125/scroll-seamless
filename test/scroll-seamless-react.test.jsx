@@ -1,6 +1,6 @@
 import React, { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
-import { ScrollSeamless } from '../src/react';
+import ScrollSeamless from '../src/react';
 
 describe('ScrollSeamless (React)', () => {
   it('可以正常渲染', () => {
@@ -37,6 +37,8 @@ describe('ScrollSeamless (React)', () => {
     );
     expect(typeof ref.current?.start).toBe('function');
     expect(typeof ref.current?.stop).toBe('function');
+    expect(typeof ref.current?.pause).toBe('function');
+    expect(typeof ref.current?.resume).toBe('function');
     expect(typeof ref.current?.updateData).toBe('function');
   });
 }); 

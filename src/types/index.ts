@@ -9,6 +9,8 @@ export type ScrollDirection = 'up' | 'down' | 'left' | 'right';
 export type ScrollSeamlessEvent =
   | 'start'
   | 'stop'
+  | 'pause'
+  | 'resume'
   | 'destroy'
   | 'update'
   | 'cycle'
@@ -88,6 +90,8 @@ export interface ScrollSeamlessOptions {
 export interface ScrollSeamlessController {
   start: () => void;
   stop: () => void;
+  pause: () => void;
+  resume: () => void;
   destroy: () => void;
   updateData: () => void;
   setOptions: (options: Partial<ScrollSeamlessOptions>) => void;

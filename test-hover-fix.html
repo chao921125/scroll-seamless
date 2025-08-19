@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼠标悬停滚动位置测试</title>
+    <style>
+        .scroll-container {
+            width: 400px;
+            height: 50px;
+            border: 2px solid #333;
+            margin: 20px;
+            background: #f5f5f5;
+            position: relative;
+        }
+        
+        .test-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 4px;
+        }
+        
+        .position-display {
+            margin: 10px 0;
+            font-family: monospace;
+            background: #fff;
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>鼠标悬停滚动位置测试</h1>
+    
+    <div class="test-info">
+        <strong>测试说明：</strong>
+        <ol>
+            <li>观察滚动内容正常滚动</li>
+            <li>将鼠标悬停在滚动区域上，滚动应该停止</li>
+            <li>移开鼠标，滚动应该从停止的位置继续，而不是从头开始</li>
+        </ol>
+    </div>
+    
+    <div class="position-display" id="position-display">
+        当前位置: 0px
+    </div>
+    
+    <div class="scroll-container" id="scroll-container-1"></div>
+    
+    <div class="test-info">
+        <button onclick="startScroll()">开始滚动</button>
+        <button onclick="stopScroll()">停止滚动</button>
+        <button onclick="pauseScroll()">暂停滚动</button>
+        <button onclick="resumeScroll()">恢复滚动</button>
+    </div>
+
+    <script type="module">
+        // 模拟 ScrollEngine 的简化版本来测试修复
+        class TestScrollEngine {
+            constructor(container, options) {
+                this.container = container;
+                this.options = { hoverStop: true, step: 1, ...options };
+                this.running = false;
+                this.position = 0;
+                this.animationId = null;
+                this.paused = false;
+                
+                this.setupContainer();
+                this.createContent();
+                this.bindEvents();
+            }
+            
+            setupContainer() {
+                this.container.style.overflow = 'hidden';
+                this.container.style.position = 'relative';
+            }
+            
+            createContent() {
+                this.content1 = document.createElement('div');
+                this.content2 = document.createElement('div');
+                
+                const style = {
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: '100%'
+                };
+                
+                Object.assign(this.content1.style, style);
+                Object.assign(this.content2.style, style);
+                
+                // 填充内容
+                const data = this.options.data || ['测试内容1', '测试内容2', '测试内容3', '测试内容4', '测试内容5'];
+                const content = data.map(item => `<span style="margin-right: 20px; padding: 5px 10px; background: #007acc; color: white; border-radius: 3px;">${item}</span>`).join('');
+                
+                this.content1.innerHTML = content;
+                this.content2.innerHTML = content;
+                
+                this.container.appendChild(this.content1);
+                this.container.appendChild(this.content2);
+                
+                // 设置第二个内容的初始位置
+                setTimeout(() => {
+                    const width = this.content1.scrollWidth;
+                    this.content2.style.left = width + 'px';
+                    this.contentWidth = width;
+                }, 0);
+            }
+            
+            bindEvents() {
+                if (this.options.hoverStop) {
+                    this.container.addEventListener('mouseenter', () => this.pause());
+                    this.container.addEventListener('mouseleave', () => this.resume());
+                }
+            }
+            
+            start() {
+                if (this.running) return;
+                
+                this.running = true;
+                this.paused = false;
+                this.animate();
+                console.log('开始滚动，当前位置:', this.position);
+            }
+            
+            stop() {
+                this.running = false;
+                this.paused = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+                console.log('停止滚动，当前位置:', this.position);
+            }
+            
+            pause() {
+                if (!this.running) return;
+                this.paused = true;
+                console.log('暂停滚动，当前位置:', this.position);
+            }
+            
+            resume() {
+                if (!this.running || !this.paused) return;
+                this.paused = false;
+                this.animate();
+                console.log('恢复滚动，当前位置:', this.position);
+            }
+            
+            animate() {
+                if (!this.running || this.paused) return;
+                
+                this.position += this.options.step;
+                
+                // 当内容完全移出视图时重置位置
+                if (this.position >= this.contentWidth) {
+                    this.position = 0;
+                }
+                
+                // 应用变换
+                this.content1.style.transform = `translateX(${-this.position}px)`;
+                this.content2.style.transform = `translateX(${-this.position}px)`;
+                
+                // 更新位置显示
+                document.getElementById('position-display').textContent = `当前位置: ${this.position}px`;
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        // 创建测试实例
+        const container = document.getElementById('scroll-container-1');
+        const scroll = new TestScrollEngine(container, {
+            data: ['无缝滚动', '鼠标悬停测试', 'Seamless Scroll', 'Hover Test', '位置保持', 'Position Keep'],
+            step: 1
+        });
+        
+        // 自动开始
+        scroll.start();
+        
+        // 全局函数供按钮调用
+        window.startScroll = () => scroll.start();
+        window.stopScroll = () => scroll.stop();
+        window.pauseScroll = () => scroll.pause();
+        window.resumeScroll = () => scroll.resume();
+    </script>
+</body>
+</html>

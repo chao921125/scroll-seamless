@@ -480,6 +480,11 @@ export class ScrollEngine implements ScrollSeamlessController {
     const states = isHorizontal ? this.rowStates : this.colStates;
     
     states.forEach((state, index) => {
+      // 只有在首次启动时才重置位置
+      if (state.position === undefined) {
+        state.position = 0;
+      }
+      
       const animationId = AnimationHelper.generateId('scroll');
       state.animationId = animationId;
       
@@ -507,8 +512,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       state.content2.style.top = `${contentSize}px`;
     }
     
-    // 确保初始位置正确
-    state.position = 0;
+    // 保持当前位置，不重置为0
     
     // 应用初始变换
     if (isHorizontal) {
@@ -581,6 +585,38 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
+   * 暂停滚动（保持当前位置）
+   */
+  public pause(): void {
+    if (!this.running) return;
+    
+    // 暂停所有动画，但保持running状态和位置
+    [...this.rowStates, ...this.colStates].forEach(state => {
+      if (state.animationId) {
+        rafScheduler.pause(state.animationId);
+      }
+    });
+    
+    this.options.onEvent?.('pause', { direction: this.options.direction });
+  }
+
+  /**
+   * 恢复滚动（从当前位置继续）
+   */
+  public resume(): void {
+    if (!this.running) return;
+    
+    // 恢复所有动画
+    [...this.rowStates, ...this.colStates].forEach(state => {
+      if (state.animationId) {
+        rafScheduler.resume(state.animationId);
+      }
+    });
+    
+    this.options.onEvent?.('resume', { direction: this.options.direction });
+  }
+
+  /**
    * 销毁实例
    */
   public destroy(): void {
@@ -611,7 +647,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       this.stop();
     }
 
-    // 重置所有位置
+    // 重置所有位置（数据更新时需要重置）
     [...this.rowStates, ...this.colStates].forEach(state => {
       state.position = 0;
       state.content1.style.transform = '';
@@ -763,13 +799,13 @@ export class ScrollEngine implements ScrollSeamlessController {
    */
   private onMouseEnter(): void {
     if (this.options.hoverStop) {
-      this.stop();
+      this.pause();
     }
   }
 
   private onMouseLeave(): void {
     if (this.options.hoverStop && this.shouldScroll()) {
-      this.start();
+      this.resume();
     }
   }
 
