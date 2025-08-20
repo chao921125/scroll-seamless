@@ -71,23 +71,45 @@ export class RAFScheduler {
   }
 
   /**
-   * 暂停特定动画
+   * 暂停特定动画 - 增强版本，确保暂停状态正确管理
    */
   pause(animationId: string): void {
     const animation = this.animations.get(animationId);
     if (animation) {
-      // 可以添加暂停标记
+      // 添加暂停标记和时间戳
       (animation as any).paused = true;
+      (animation as any).pausedAt = performance.now();
+      
+      // 记录暂停前的最后帧时间
+      if (animation.lastFrameTime) {
+        (animation as any).lastActiveFrameTime = animation.lastFrameTime;
+      }
     }
   }
 
   /**
-   * 恢复特定动画
+   * 恢复特定动画 - 增强版本，确保恢复时时间连续性
    */
   resume(animationId: string): void {
     const animation = this.animations.get(animationId);
-    if (animation) {
+    if (animation && (animation as any).paused) {
+      const now = performance.now();
+      const pausedDuration = now - ((animation as any).pausedAt || now);
+      
+      // 恢复动画状态
       (animation as any).paused = false;
+      
+      // 调整开始时间以补偿暂停时间
+      if (animation.startTime) {
+        animation.startTime += pausedDuration;
+      }
+      
+      // 更新最后帧时间
+      animation.lastFrameTime = now;
+      
+      // 清理暂停相关的临时属性
+      delete (animation as any).pausedAt;
+      delete (animation as any).lastActiveFrameTime;
     }
   }
 
@@ -160,7 +182,12 @@ export class RAFScheduler {
 
     // 执行动画
     for (const animation of sortedAnimations) {
-      if ((animation as any).paused) continue;
+      // 跳过暂停的动画
+      if ((animation as any).paused) {
+        // 更新暂停动画的时间戳以保持同步
+        (animation as any).pausedAt = timestamp;
+        continue;
+      }
 
       const animationStart = performance.now();
       
