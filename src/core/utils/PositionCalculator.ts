@@ -1,5 +1,6 @@
 import { ScrollDirection } from '../../types';
 import { DirectionHandler } from './DirectionHandler';
+import { ErrorHandler, ScrollDirectionError } from './ErrorHandler';
 
 /**
  * 无缝位置计算结果
@@ -41,6 +42,19 @@ export class PositionCalculator {
     direction: ScrollDirection,
     forceRefresh = false
   ): number {
+    // 验证输入参数
+    const validation = ErrorHandler.validateContentSizeCalculation(element, direction);
+    if (!validation.isValid) {
+      const error = validation.errors[0];
+      ErrorHandler.logError(error);
+      return ErrorHandler.handleContentSizeCalculationFailure(element, direction, new Error(error.message));
+    }
+
+    // 记录警告
+    validation.warnings.forEach(warning => {
+      ErrorHandler.logWarning(warning, { element: element?.tagName, direction });
+    });
+
     const cacheKey = this.generateCacheKey(element, direction);
     const now = Date.now();
     
@@ -48,22 +62,43 @@ export class PositionCalculator {
     if (!forceRefresh) {
       const cached = this.contentSizeCache.get(cacheKey);
       if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+        ErrorHandler.logDebug('Using cached content size', {
+          element: element.tagName,
+          direction,
+          size: cached.size,
+          cacheAge: now - cached.timestamp
+        });
         return cached.size;
       }
     }
 
-    // 计算实际尺寸
-    const size = this.calculateActualContentSize(element, direction);
-    
-    // 更新缓存
-    this.contentSizeCache.set(cacheKey, {
-      element,
-      size,
-      timestamp: now,
-      direction
-    });
+    try {
+      // 计算实际尺寸
+      const size = this.calculateActualContentSize(element, direction);
+      
+      // 更新缓存
+      this.contentSizeCache.set(cacheKey, {
+        element,
+        size,
+        timestamp: now,
+        direction
+      });
 
-    return size;
+      ErrorHandler.logDebug('Content size calculated and cached', {
+        element: element.tagName,
+        direction,
+        size,
+        forceRefresh
+      });
+
+      return size;
+    } catch (error) {
+      return ErrorHandler.handleContentSizeCalculationFailure(
+        element,
+        direction,
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
   }
 
   /**
@@ -76,50 +111,56 @@ export class PositionCalculator {
     element: HTMLElement,
     direction: ScrollDirection
   ): number {
-    const config = DirectionHandler.getDirectionConfig(direction);
-    
-    try {
-      // 确保元素可见以获取准确尺寸
-      const originalDisplay = element.style.display;
-      const originalVisibility = element.style.visibility;
-      
-      if (originalDisplay === 'none') {
-        element.style.display = 'block';
-        element.style.visibility = 'hidden';
-      }
+    return ErrorHandler.safeExecute(
+      () => {
+        const config = DirectionHandler.getDirectionConfig(direction);
+        
+        // 确保元素可见以获取准确尺寸
+        const originalDisplay = element.style.display;
+        const originalVisibility = element.style.visibility;
+        
+        if (originalDisplay === 'none') {
+          element.style.display = 'block';
+          element.style.visibility = 'hidden';
+        }
 
-      let size: number;
-      
-      if (config.isHorizontal) {
-        // 水平方向：使用 scrollWidth，但需要考虑子元素的实际宽度
-        size = Math.max(
-          element.scrollWidth,
-          element.offsetWidth,
-          this.calculateChildrenTotalWidth(element)
-        );
-      } else {
-        // 垂直方向：使用 scrollHeight，但需要考虑子元素的实际高度
-        size = Math.max(
-          element.scrollHeight,
-          element.offsetHeight,
-          this.calculateChildrenTotalHeight(element)
-        );
-      }
+        let size: number;
+        
+        if (config.isHorizontal) {
+          // 水平方向：使用 scrollWidth，但需要考虑子元素的实际宽度
+          size = Math.max(
+            element.scrollWidth,
+            element.offsetWidth,
+            this.calculateChildrenTotalWidth(element)
+          );
+        } else {
+          // 垂直方向：使用 scrollHeight，但需要考虑子元素的实际高度
+          size = Math.max(
+            element.scrollHeight,
+            element.offsetHeight,
+            this.calculateChildrenTotalHeight(element)
+          );
+        }
 
-      // 恢复原始样式
-      if (originalDisplay === 'none') {
-        element.style.display = originalDisplay;
-        element.style.visibility = originalVisibility;
-      }
+        // 恢复原始样式
+        if (originalDisplay === 'none') {
+          element.style.display = originalDisplay;
+          element.style.visibility = originalVisibility;
+        }
 
-      // 确保返回有效的尺寸值，添加安全边界
-      return Math.max(size + this.SAFETY_MARGIN, 1);
-      
-    } catch (error) {
-      console.warn('Failed to calculate content size:', error);
-      // 返回默认值
-      return config.isHorizontal ? 100 : 50;
-    }
+        // 验证计算结果
+        if (size <= 0) {
+          throw new Error(`Invalid content size calculated: ${size}`);
+        }
+
+        // 确保返回有效的尺寸值，添加安全边界
+        return Math.max(size + this.SAFETY_MARGIN, 1);
+      },
+      ScrollDirectionError.CONTENT_SIZE_CALCULATION_FAILED,
+      { element: element.tagName, direction },
+      // 返回基于方向的默认值
+      direction === 'left' || direction === 'right' ? 100 : 50
+    ) || (direction === 'left' || direction === 'right' ? 100 : 50);
   }
 
   /**

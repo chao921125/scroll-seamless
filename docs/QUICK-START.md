@@ -214,7 +214,7 @@ Scroll Seamless 提供了多种配置选项，以下是最常用的一些：
 | 配置项 | 类型 | 默认值 | 说明 |
 |-------|------|-------|------|
 | `data` | `string[]` | `[]` | 滚动数据数组 |
-| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | 滚动方向 |
+| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | 滚动方向（所有方向已修复并正常工作） |
 | `step` | `number` | `1` | 每步移动像素 |
 | `stepWait` | `number` | `0` | 每步等待时间(ms) |
 | `delay` | `number` | `0` | 初始延迟时间(ms) |
@@ -349,6 +349,128 @@ const scrollInstance = new ScrollSeamless(container, {
     </div>
   </div>
 </ScrollSeamless>
+```
+
+## 方向示例
+
+### 所有方向滚动示例
+
+```javascript
+// 向左滚动（默认）
+const leftScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "left"
+});
+
+// 向右滚动（已修复）
+const rightScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "right"
+});
+
+// 向上滚动（已修复空白问题）
+const upScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "up"
+});
+
+// 向下滚动（已修复）
+const downScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "down"
+});
+```
+
+### React 中的方向切换
+
+```jsx
+import React, { useState, useRef } from "react";
+import { ScrollSeamless } from "scroll-seamless/react";
+
+function DirectionDemo() {
+  const scrollRef = useRef(null);
+  const [direction, setDirection] = useState("left");
+  const data = ["项目 1", "项目 2", "项目 3", "项目 4"];
+
+  const changeDirection = (newDirection) => {
+    setDirection(newDirection);
+    // 使用 setOptions 进行平滑切换
+    scrollRef.current?.setOptions({ direction: newDirection });
+  };
+
+  return (
+    <div>
+      <div style={{ width: "300px", height: "100px", margin: "20px 0" }}>
+        <ScrollSeamless
+          ref={scrollRef}
+          data={data}
+          direction={direction}
+          step={1}
+          hoverStop={true}
+        >
+          {(item, index) => (
+            <div key={index} style={{ padding: "10px", margin: "5px", backgroundColor: "#f0f0f0" }}>
+              {item}
+            </div>
+          )}
+        </ScrollSeamless>
+      </div>
+
+      <div>
+        <button onClick={() => changeDirection("left")}>向左</button>
+        <button onClick={() => changeDirection("right")}>向右</button>
+        <button onClick={() => changeDirection("up")}>向上</button>
+        <button onClick={() => changeDirection("down")}>向下</button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Vue 中的方向切换
+
+```vue
+<template>
+  <div>
+    <div style="width: 300px; height: 100px; margin: 20px 0;">
+      <ScrollSeamless
+        ref="scrollRef"
+        :data="data"
+        :direction="direction"
+        :step="1"
+        :hover-stop="true"
+      >
+        <template #default="{ item, index }">
+          <div :key="index" style="padding: 10px; margin: 5px; background-color: #f0f0f0;">
+            {{ item }}
+          </div>
+        </template>
+      </ScrollSeamless>
+    </div>
+
+    <div>
+      <button @click="changeDirection('left')">向左</button>
+      <button @click="changeDirection('right')">向右</button>
+      <button @click="changeDirection('up')">向上</button>
+      <button @click="changeDirection('down')">向下</button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { ScrollSeamless } from "scroll-seamless/vue";
+
+const scrollRef = ref(null);
+const direction = ref("left");
+const data = ref(["项目 1", "项目 2", "项目 3", "项目 4"]);
+
+const changeDirection = (newDirection) => {
+  direction.value = newDirection;
+  // 使用 setOptions 进行平滑切换
+  scrollRef.value?.setOptions({ direction: newDirection });
+};
+</script>
 ```
 
 更多高级用法，请参考 [API 文档](./API.md)。

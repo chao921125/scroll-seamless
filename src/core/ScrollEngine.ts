@@ -7,6 +7,7 @@ import { PluginManager } from './plugins/PluginManager';
 import { DirectionHandler } from './utils/DirectionHandler';
 import { PositionCalculator } from './utils/PositionCalculator';
 import { TransformManager } from './utils/TransformManager';
+import { ErrorHandler, ScrollDirectionError } from './utils/ErrorHandler';
 
 /**
  * 扩展选项接口，添加 renderItem
@@ -45,13 +46,45 @@ export class ScrollEngine implements ScrollSeamlessController {
   private seamlessColData: string[][] = [];
 
   constructor(container: HTMLElement | null, options: ExtendedScrollSeamlessOptions) {
-    // 输入验证
-    if (!container) {
-      throw new Error('ScrollEngine: Container element is required');
+    // 验证容器
+    const containerValidation = ErrorHandler.validateContainer(container);
+    if (!containerValidation.isValid) {
+      const error = containerValidation.errors[0];
+      ErrorHandler.logError(error);
+      throw new Error(error.message);
     }
+
+    // 记录容器警告
+    containerValidation.warnings.forEach(warning => {
+      ErrorHandler.logWarning(warning, { container: container?.tagName });
+    });
     
+    // 验证数据
     if (!options.data || !Array.isArray(options.data) || options.data.length === 0) {
-      throw new Error('ScrollEngine: Data array is required and cannot be empty');
+      const errorDetails = {
+        code: ScrollDirectionError.INVALID_DATA,
+        message: 'ScrollEngine: Data array is required and cannot be empty',
+        context: { data: options.data, dataType: typeof options.data },
+        timestamp: Date.now(),
+        recoverable: false
+      };
+      ErrorHandler.logError(errorDetails);
+      throw new Error(errorDetails.message);
+    }
+
+    // 验证方向参数
+    if (options.direction) {
+      const directionValidation = ErrorHandler.validateDirection(options.direction);
+      if (!directionValidation.isValid) {
+        const error = directionValidation.errors[0];
+        ErrorHandler.logError(error);
+        throw new Error(error.message);
+      }
+      
+      // 记录方向警告
+      directionValidation.warnings.forEach(warning => {
+        ErrorHandler.logWarning(warning, { direction: options.direction });
+      });
     }
 
     this.container = container;
@@ -126,8 +159,26 @@ export class ScrollEngine implements ScrollSeamlessController {
       if (this.shouldScroll()) {
         this.start();
       }
+
+      ErrorHandler.logDebug('ScrollEngine initialized successfully', {
+        direction: this.options.direction,
+        dataLength: this.options.data.length,
+        rows: this.options.rows,
+        cols: this.options.cols
+      });
     } catch (error) {
-      console.error('ScrollEngine initialization failed:', error);
+      const errorDetails = {
+        code: ScrollDirectionError.ANIMATION_SYNC_FAILED,
+        message: `ScrollEngine initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+        context: { 
+          direction: this.options.direction,
+          dataLength: this.options.data.length,
+          error 
+        },
+        timestamp: Date.now(),
+        recoverable: false
+      };
+      ErrorHandler.logError(errorDetails);
       this.handleError(error as Error);
     }
   }
@@ -476,24 +527,85 @@ export class ScrollEngine implements ScrollSeamlessController {
   public start(): void {
     if (this.running) return;
     
-    this.running = true;
-    this.options.onEvent?.('start', { direction: this.options.direction });
-    
-    const isHorizontal = this.options.direction === 'left' || this.options.direction === 'right';
-    const states = isHorizontal ? this.rowStates : this.colStates;
-    
-    states.forEach((state, index) => {
-      // 只有在首次启动时才重置位置
-      if (state.position === undefined) {
-        state.position = 0;
-      }
+    try {
+      this.running = true;
+      this.options.onEvent?.('start', { direction: this.options.direction });
       
-      const animationId = AnimationHelper.generateId('scroll');
-      state.animationId = animationId;
+      const isHorizontal = this.options.direction === 'left' || this.options.direction === 'right';
+      const states = isHorizontal ? this.rowStates : this.colStates;
       
-      const animation = this.createScrollAnimation(state, index);
-      rafScheduler.schedule(animation);
-    });
+      states.forEach((state, index) => {
+        try {
+          // 只有在首次启动时才重置位置
+          if (state.position === undefined) {
+            state.position = 0;
+          }
+          
+          const animationId = AnimationHelper.generateId('scroll');
+          state.animationId = animationId;
+          
+          // 验证动画同步状态
+          const syncValidation = ErrorHandler.validateAnimationSync(animationId, 'running');
+          if (!syncValidation.isValid) {
+            ErrorHandler.logError(syncValidation.errors[0]);
+            return;
+          }
+          
+          const animation = this.createScrollAnimation(state, index);
+          rafScheduler.schedule(animation);
+          
+          ErrorHandler.logDebug('Animation started', {
+            animationId,
+            index,
+            direction: this.options.direction,
+            initialPosition: state.position
+          });
+        } catch (stateError) {
+          const errorDetails = {
+            code: ScrollDirectionError.ANIMATION_SYNC_FAILED,
+            message: `Failed to start animation for state ${index}: ${stateError instanceof Error ? stateError.message : String(stateError)}`,
+            context: { index, direction: this.options.direction, stateError },
+            timestamp: Date.now(),
+            recoverable: true
+          };
+          ErrorHandler.logError(errorDetails);
+          
+          // 尝试恢复这个特定的动画
+          ErrorHandler.handleAnimationSyncFailure(
+            `state_${index}`,
+            () => {
+              const retryAnimationId = AnimationHelper.generateId('scroll_retry');
+              state.animationId = retryAnimationId;
+              const retryAnimation = this.createScrollAnimation(state, index);
+              rafScheduler.schedule(retryAnimation);
+            }
+          );
+        }
+      });
+
+      ErrorHandler.logDebug('Scroll started successfully', {
+        direction: this.options.direction,
+        statesCount: states.length
+      });
+    } catch (error) {
+      this.running = false;
+      const errorDetails = {
+        code: ScrollDirectionError.ANIMATION_SYNC_FAILED,
+        message: `Failed to start scrolling: ${error instanceof Error ? error.message : String(error)}`,
+        context: { direction: this.options.direction, error },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
+      
+      // 触发错误事件
+      this.options.onEvent?.('error', {
+        type: 'startFailure',
+        error: errorDetails.message,
+        direction: this.options.direction,
+        timestamp: Date.now()
+      });
+    }
   }
 
   /**
@@ -728,23 +840,68 @@ export class ScrollEngine implements ScrollSeamlessController {
    * 销毁实例
    */
   public destroy(): void {
-    this.stop();
-    
-    // 销毁所有插件
-    this.pluginManager.destroyAll();
-    
-    // 清理资源
-    this.memoryManager.destroy();
-    this.domCache.destroy();
-    this.elementPool.clear();
-    
-    // 清理位置计算器缓存
-    PositionCalculator.clearContentSizeCache();
-    
-    // 清空容器
-    this.container.innerHTML = '';
-    
-    this.options.onEvent?.('destroy', { direction: this.options.direction });
+    try {
+      this.stop();
+      
+      // 销毁所有插件
+      this.pluginManager.destroyAll();
+      
+      // 清理资源
+      this.memoryManager.destroy();
+      this.domCache.destroy();
+      this.elementPool.clear();
+      
+      // 清理位置计算器缓存
+      PositionCalculator.clearContentSizeCache();
+      
+      // 清理错误处理器
+      ErrorHandler.clearErrorLog();
+      
+      // 清空容器
+      this.container.innerHTML = '';
+      
+      this.options.onEvent?.('destroy', { direction: this.options.direction });
+
+      ErrorHandler.logDebug('ScrollEngine destroyed successfully');
+    } catch (error) {
+      const errorDetails = {
+        code: ScrollDirectionError.ANIMATION_SYNC_FAILED,
+        message: `Failed to destroy ScrollEngine: ${error instanceof Error ? error.message : String(error)}`,
+        context: { error },
+        timestamp: Date.now(),
+        recoverable: false
+      };
+      ErrorHandler.logError(errorDetails);
+    }
+  }
+
+  /**
+   * 处理错误的通用方法
+   * @param error 错误对象
+   */
+  private handleError(error: Error): void {
+    // 触发错误事件
+    this.options.onEvent?.('error', {
+      type: 'criticalError',
+      error: error.message,
+      stack: error.stack,
+      timestamp: Date.now(),
+      direction: this.options.direction
+    });
+
+    // 尝试基本恢复
+    try {
+      this.stop();
+      ErrorHandler.logDebug('Attempting basic error recovery');
+    } catch (recoveryError) {
+      ErrorHandler.logError({
+        code: ScrollDirectionError.ANIMATION_SYNC_FAILED,
+        message: `Error recovery failed: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}`,
+        context: { originalError: error.message, recoveryError },
+        timestamp: Date.now(),
+        recoverable: false
+      });
+    }
   }
 
   /**
@@ -782,22 +939,74 @@ export class ScrollEngine implements ScrollSeamlessController {
    * 设置选项
    */
   public setOptions(options: Partial<ExtendedScrollSeamlessOptions>): void {
-    const wasRunning = this.running;
-    const oldDirection = this.options.direction;
-    
-    this.stop();
-    
-    this.options = { ...this.options, ...options };
-    
-    // 如果方向发生变化，需要特殊处理
-    if (options.direction && options.direction !== oldDirection) {
-      this.handleDirectionChange(oldDirection, options.direction);
-    } else {
-      this.layout();
-    }
-    
-    if (wasRunning && this.shouldScroll()) {
-      this.start();
+    try {
+      // 验证新的方向参数（如果提供）
+      if (options.direction) {
+        const directionValidation = ErrorHandler.validateDirection(options.direction);
+        if (!directionValidation.isValid) {
+          const error = directionValidation.errors[0];
+          ErrorHandler.logError(error);
+          throw new Error(error.message);
+        }
+        
+        // 记录方向警告
+        directionValidation.warnings.forEach(warning => {
+          ErrorHandler.logWarning(warning, { newDirection: options.direction, oldDirection: this.options.direction });
+        });
+      }
+
+      // 验证数据参数（如果提供）
+      if (options.data !== undefined) {
+        if (!Array.isArray(options.data) || options.data.length === 0) {
+          const errorDetails = {
+            code: ScrollDirectionError.INVALID_DATA,
+            message: 'Data array must be a non-empty array',
+            context: { data: options.data, dataType: typeof options.data },
+            timestamp: Date.now(),
+            recoverable: false
+          };
+          ErrorHandler.logError(errorDetails);
+          throw new Error(errorDetails.message);
+        }
+      }
+
+      const wasRunning = this.running;
+      const oldDirection = this.options.direction;
+      
+      this.stop();
+      
+      this.options = { ...this.options, ...options };
+      
+      // 如果方向发生变化，需要特殊处理
+      if (options.direction && options.direction !== oldDirection) {
+        this.handleDirectionChange(oldDirection, options.direction);
+      } else {
+        this.layout();
+      }
+      
+      if (wasRunning && this.shouldScroll()) {
+        this.start();
+      }
+
+      ErrorHandler.logDebug('Options updated successfully', {
+        oldDirection,
+        newDirection: options.direction,
+        wasRunning,
+        dataLength: options.data?.length
+      });
+
+    } catch (error) {
+      const errorDetails = {
+        code: ScrollDirectionError.DIRECTION_CHANGE_FAILED,
+        message: `Failed to set options: ${error instanceof Error ? error.message : String(error)}`,
+        context: { options, currentDirection: this.options.direction, error },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
+      
+      // 重新抛出错误，让调用者知道设置失败
+      throw error;
     }
   }
 
@@ -1613,50 +1822,7 @@ export class ScrollEngine implements ScrollSeamlessController {
     // 这里可以添加滚轮控制逻辑
   }
 
-  /**
-   * 错误处理
-   */
-  private handleError(error: Error): void {
-    console.error('ScrollEngine Error:', error);
-    
-    // 触发错误事件
-    this.options.onEvent?.('error', { 
-      type: 'error',
-      direction: this.options.direction,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    // 尝试恢复
-    try {
-      // 停止所有动画
-      this.stop();
-      
-      // 重置状态
-      this.rowStates.forEach(state => {
-        state.position = 0;
-        state.content1.style.transform = 'none';
-        state.content2.style.transform = 'none';
-      });
-      
-      this.colStates.forEach(state => {
-        state.position = 0;
-        state.content1.style.transform = 'none';
-        state.content2.style.transform = 'none';
-      });
-      
-      // 如果配置了自动重启，则尝试重新启动
-      if (this.options.performance && (this.options.performance as any).autoRestart) {
-        setTimeout(() => {
-          if (this.shouldScroll()) {
-            this.start();
-          }
-        }, 1000);
-      }
-    } catch (recoveryError) {
-      console.error('ScrollEngine Recovery Failed:', recoveryError);
-    }
-  }
+
 
   /**
    * 暂停/恢复状态管理方法

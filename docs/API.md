@@ -20,7 +20,7 @@
 | 属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `data` | `any[]` | `[]` | 滚动数据数组，可以是任意类型的数据，将传递给渲染函数 |
-| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | 滚动方向，支持上下左右四个方向 |
+| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'left'` | 滚动方向，支持上下左右四个方向。**已修复：** 所有方向现在都能正常工作，包括 `down` 和 `right` 方向，`up` 方向不再出现空白区域 |
 | `step` | `number` | `1` | 每步移动像素，值越大滚动速度越快 |
 | `stepWait` | `number` | `0` | 每步等待时间(ms)，可用于控制滚动速度 |
 | `delay` | `number` | `0` | 初始延迟时间(ms)，组件挂载后等待指定时间再开始滚动 |
@@ -744,6 +744,48 @@ const scrollInstance = new ScrollSeamless(container, {
 scrollInstance.start();
 ```
 
+### 所有方向示例
+
+```javascript
+// 向左滚动（默认）
+const leftScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "left"
+});
+
+// 向右滚动（已修复）
+const rightScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "right"
+});
+
+// 向上滚动（已修复空白问题）
+const upScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "up"
+});
+
+// 向下滚动（已修复）
+const downScroll = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "down"
+});
+```
+
+### 动态方向切换
+
+```javascript
+const scrollInstance = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "left"
+});
+
+// 动态切换方向
+scrollInstance.setOptions({ direction: "right" });
+scrollInstance.setOptions({ direction: "up" });
+scrollInstance.setOptions({ direction: "down" });
+```
+
 ### 使用插件
 
 ```javascript
@@ -843,3 +885,182 @@ Vue 组件:
   </div>
 </ScrollSeamless>
 ``` 
+
+## 方向功能详解
+
+### 支持的滚动方向
+
+Scroll Seamless 支持四个滚动方向，每个方向都经过了优化和修复：
+
+| 方向 | 说明 | 修复状态 |
+|------|------|----------|
+| `left` | 从右向左滚动（默认） | ✅ 正常工作 |
+| `right` | 从左向右滚动 | 🔧 **已修复** - 之前不生效的问题已解决 |
+| `up` | 从下向上滚动 | 🔧 **已修复** - 空白区域问题已解决 |
+| `down` | 从上向下滚动 | 🔧 **已修复** - 之前不生效的问题已解决 |
+
+### 方向切换最佳实践
+
+#### 1. 平滑方向切换
+
+```javascript
+// 推荐：使用 setOptions 进行平滑切换
+scrollInstance.setOptions({ direction: "right" });
+
+// 不推荐：直接停止后重新创建实例
+// scrollInstance.stop();
+// scrollInstance = new ScrollSeamless(container, { direction: "right" });
+```
+
+#### 2. 方向切换时的状态保持
+
+```javascript
+// 获取当前状态
+const isRunning = scrollInstance.isRunning();
+const currentPosition = scrollInstance.getPosition();
+
+// 切换方向
+scrollInstance.setOptions({ direction: "up" });
+
+// 如果之前在运行，切换后继续运行
+if (isRunning) {
+  scrollInstance.start();
+}
+```
+
+#### 3. 响应式方向切换
+
+```javascript
+// 根据容器尺寸自动选择方向
+function updateDirection() {
+  const container = document.getElementById("scroll-container");
+  const { width, height } = container.getBoundingClientRect();
+  
+  const direction = width > height ? "left" : "up";
+  scrollInstance.setOptions({ direction });
+}
+
+// 监听窗口大小变化
+window.addEventListener("resize", updateDirection);
+```
+
+## 故障排除
+
+### 方向相关常见问题
+
+#### 问题 1：down 或 right 方向不滚动
+
+**症状：** 设置 `direction: "down"` 或 `direction: "right"` 后，内容不滚动或滚动方向错误。
+
+**解决方案：**
+```javascript
+// ✅ 确保使用最新版本，该问题已在最新版本中修复
+const scrollInstance = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "down", // 现在可以正常工作
+  step: 1
+});
+```
+
+**技术细节：** 修复了 `createScrollAnimation` 方法中的 `isReverse` 判断逻辑和变换计算公式。
+
+#### 问题 2：up 方向出现空白区域
+
+**症状：** 设置 `direction: "up"` 时，滚动过程中出现空白区域，内容不连续。
+
+**解决方案：**
+```javascript
+// ✅ 该问题已修复，up 方向现在可以无缝滚动
+const scrollInstance = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "up", // 不再出现空白区域
+  step: 1
+});
+```
+
+**技术细节：** 修复了内容高度计算和第二个内容元素的定位逻辑。
+
+#### 问题 3：方向切换时内容跳跃
+
+**症状：** 动态切换方向时，内容位置发生跳跃或闪烁。
+
+**解决方案：**
+```javascript
+// ✅ 使用 setOptions 方法进行平滑切换
+scrollInstance.setOptions({ 
+  direction: "right",
+  // 可以同时更新其他选项
+  step: 2
+});
+
+// ❌ 避免频繁切换方向
+// setInterval(() => {
+//   scrollInstance.setOptions({ direction: Math.random() > 0.5 ? "left" : "right" });
+// }, 100);
+```
+
+#### 问题 4：暂停恢复功能在某些方向下不正常
+
+**症状：** 在特定方向下，鼠标悬停暂停或恢复功能不正常。
+
+**解决方案：**
+```javascript
+// ✅ 所有方向现在都支持正确的暂停恢复
+const scrollInstance = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "up", // 任何方向都支持
+  hoverStop: true, // 悬停暂停功能正常
+});
+
+// 手动控制也正常工作
+scrollInstance.pause(); // 暂停并保持位置
+scrollInstance.resume(); // 从当前位置恢复
+```
+
+### 性能优化建议
+
+#### 1. 方向相关的性能优化
+
+```javascript
+// 为不同方向优化步长
+const directionConfig = {
+  left: { step: 1 },
+  right: { step: 1 },
+  up: { step: 0.8 }, // 垂直滚动可以稍慢一些
+  down: { step: 0.8 }
+};
+
+scrollInstance.setOptions(directionConfig[currentDirection]);
+```
+
+#### 2. 内容优化
+
+```javascript
+// 对于垂直滚动，确保内容高度合适
+const data = direction === "up" || direction === "down" 
+  ? ["短内容 1", "短内容 2", "短内容 3"] // 垂直滚动使用较短内容
+  : ["较长的水平滚动内容 1", "较长的水平滚动内容 2"]; // 水平滚动可以使用较长内容
+```
+
+### 调试技巧
+
+#### 1. 启用调试模式
+
+```javascript
+const scrollInstance = new ScrollSeamless(container, {
+  data: ["项目 1", "项目 2", "项目 3"],
+  direction: "down",
+  onEvent: (event, data) => {
+    console.log(`[${event}]`, data); // 监听所有事件
+  }
+});
+```
+
+#### 2. 检查方向状态
+
+```javascript
+// 检查当前配置
+console.log("当前方向:", scrollInstance.getOptions?.().direction);
+console.log("是否运行:", scrollInstance.isRunning());
+console.log("当前位置:", scrollInstance.getPosition());
+```

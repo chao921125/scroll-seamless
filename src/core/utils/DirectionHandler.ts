@@ -1,5 +1,6 @@
 import { ScrollDirection } from '../../types';
 import { TransformManager } from './TransformManager';
+import { ErrorHandler, ScrollDirectionError } from './ErrorHandler';
 
 /**
  * 方向配置接口
@@ -72,9 +73,25 @@ export class DirectionHandler {
    * @returns 方向配置对象
    */
   public static getDirectionConfig(direction: ScrollDirection): DirectionConfig {
+    // 验证方向参数
+    const validation = ErrorHandler.validateDirection(direction);
+    if (!validation.isValid) {
+      const error = validation.errors[0];
+      ErrorHandler.logError(error);
+      throw new Error(error.message);
+    }
+
     const config = this.DIRECTION_CONFIGS[direction];
     if (!config) {
-      throw new Error(`Invalid scroll direction: ${direction}`);
+      const errorDetails = {
+        code: ScrollDirectionError.INVALID_DIRECTION,
+        message: `Invalid scroll direction: ${direction}`,
+        context: { direction, availableDirections: Object.keys(this.DIRECTION_CONFIGS) },
+        timestamp: Date.now(),
+        recoverable: false
+      };
+      ErrorHandler.logError(errorDetails);
+      throw new Error(errorDetails.message);
     }
     return config;
   }
@@ -172,11 +189,45 @@ export class DirectionHandler {
     position: number,
     direction: ScrollDirection
   ): void {
-    // 使用 TransformManager 生成优化的变换字符串
-    const transformString = TransformManager.generateTransformString(position, direction);
-    
-    // 使用 TransformManager 的错误处理机制应用变换
-    TransformManager.applySingleTransform(element, transformString);
+    // 验证元素
+    const elementValidation = ErrorHandler.validateContentSizeCalculation(element, direction);
+    if (!elementValidation.isValid) {
+      ErrorHandler.logError(elementValidation.errors[0]);
+      return;
+    }
+
+    // 记录警告
+    elementValidation.warnings.forEach(warning => {
+      ErrorHandler.logWarning(warning, { element: element.tagName, direction, position });
+    });
+
+    try {
+      // 使用 TransformManager 生成优化的变换字符串
+      const transformString = TransformManager.generateTransformString(position, direction);
+      
+      // 使用 TransformManager 的错误处理机制应用变换
+      TransformManager.applySingleTransform(element, transformString);
+      
+      ErrorHandler.logDebug('Transform applied successfully', {
+        element: element.tagName,
+        position,
+        direction,
+        transform: transformString
+      });
+    } catch (error) {
+      const errorDetails = {
+        code: ScrollDirectionError.TRANSFORM_APPLICATION_FAILED,
+        message: `Failed to apply transform: ${error instanceof Error ? error.message : String(error)}`,
+        context: { element: element.tagName, position, direction, error },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
+      
+      // 尝试恢复：应用基本变换
+      const config = this.getDirectionConfig(direction);
+      element.style.transform = `${config.transformProperty}(${position}px)`;
+    }
   }
 
   /**
