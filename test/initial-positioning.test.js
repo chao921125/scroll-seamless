@@ -77,9 +77,9 @@ describe('初始定位修复测试', () => {
       expect(content1).toBeTruthy();
       expect(content2).toBeTruthy();
 
-      // 验证初始位置 - right 方向的 content2 应该在正方向
+      // 验证初始位置 - right 方向的 content2 应该在负方向以避免左侧空白
       expect(content1.style.left).toBe('0px');
-      expect(parseFloat(content2.style.left)).toBeGreaterThan(0);
+      expect(parseFloat(content2.style.left)).toBeLessThan(0);
 
       // 验证初始变换
       expect(content1.style.transform).toContain('translateX(0px)');
@@ -125,9 +125,9 @@ describe('初始定位修复测试', () => {
       expect(content1).toBeTruthy();
       expect(content2).toBeTruthy();
 
-      // 验证初始位置 - down 方向的 content2 应该在正方向
+      // 验证初始位置 - down 方向的 content2 应该在负方向以避免上侧空白
       expect(content1.style.top).toBe('0px');
-      expect(parseFloat(content2.style.top)).toBeGreaterThan(0);
+      expect(parseFloat(content2.style.top)).toBeLessThan(0);
 
       // 验证初始变换
       expect(content1.style.transform).toContain('translateY(0px)');
@@ -155,9 +155,9 @@ describe('初始定位修复测试', () => {
           const content1 = container.querySelector('.ss-content:first-child');
           const content2 = container.querySelector('.ss-content:last-child');
 
-          // 验证位置被重置
+          // 验证位置被重置 - right 方向的 content2 应该在负方向
           expect(content1.style.left).toBe('0px');
-          expect(parseFloat(content2.style.left)).toBeGreaterThan(0);
+          expect(parseFloat(content2.style.left)).toBeLessThan(0);
 
           // 验证变换被重置
           expect(content1.style.transform).toContain('translateX(0px)');
@@ -188,9 +188,9 @@ describe('初始定位修复测试', () => {
           const content1 = container.querySelector('.ss-content:first-child');
           const content2 = container.querySelector('.ss-content:last-child');
 
-          // 验证位置被重置
+          // 验证位置被重置 - down 方向的 content2 应该在负方向
           expect(content1.style.top).toBe('0px');
-          expect(parseFloat(content2.style.top)).toBeGreaterThan(0);
+          expect(parseFloat(content2.style.top)).toBeLessThan(0);
 
           // 验证变换被重置
           expect(content1.style.transform).toContain('translateY(0px)');
@@ -331,9 +331,9 @@ describe('初始定位修复测试', () => {
         'right'
       );
 
-      // 验证 right 方向的定位
+      // 验证 right 方向的定位 - content2 应该在负方向以避免左侧空白
       expect(content1.style.left).toBe('0px');
-      expect(content2.style.left).toBe('150px');
+      expect(content2.style.left).toBe('-150px');
     });
 
     it('应该正确处理 down 方向的特殊定位', () => {
@@ -348,9 +348,9 @@ describe('初始定位修复测试', () => {
         'down'
       );
 
-      // 验证 down 方向的定位
+      // 验证 down 方向的定位 - content2 应该在负方向以避免上侧空白
       expect(content1.style.top).toBe('0px');
-      expect(content2.style.top).toBe('50px');
+      expect(content2.style.top).toBe('-50px');
     });
   });
 

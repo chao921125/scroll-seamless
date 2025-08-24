@@ -6,3 +6,4 @@ export { DOMCache } from './DOMCache';
 export { MemoryManager } from './MemoryManager';
 export { ObjectPool } from './ObjectPool';
 export { rafScheduler, AnimationHelper } from './RAFScheduler';
+export { HoverPositionManager } from './HoverPositionManager';

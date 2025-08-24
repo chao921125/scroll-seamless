@@ -74,24 +74,27 @@ export class TransformManager {
       const config = DirectionHandler.getDirectionConfig(direction);
       let transformValue: number;
 
-      // 修复 right 和 down 方向的变换计算公式
+      // 统一的变换计算公式 - 所有方向都使用负变换值
+      // 这样可以确保一致的行为和更简单的逻辑
       switch (direction) {
         case 'left':
-          // left 方向：内容从右向左移动
+          // left 方向：内容从右向左移动，position 递增
+          // transform 需要是负值来实现向左移动的视觉效果
           transformValue = -position;
           break;
         case 'right':
-          // right 方向：修复计算公式，内容应该向右移动的视觉效果
-          // 实际上是通过负向变换实现从左向右的滚动效果
+          // right 方向：内容从左向右移动，position 递减（负值）
+          // transform 使用负值，由于 position 是负值，结果是正值，实现向右移动
           transformValue = -position;
           break;
         case 'up':
-          // up 方向：内容从下向上移动
+          // up 方向：内容从下向上移动，position 递增
+          // transform 需要是负值来实现向上移动的视觉效果
           transformValue = -position;
           break;
         case 'down':
-          // down 方向：修复计算公式，内容应该向下移动的视觉效果
-          // 实际上是通过负向变换实现从上向下的滚动效果
+          // down 方向：内容从上向下移动，position 递减（负值）
+          // transform 使用负值，由于 position 是负值，结果是正值，实现向下移动
           transformValue = -position;
           break;
         default:
@@ -313,7 +316,7 @@ export class TransformManager {
   }
 
   /**
-   * 优化的双内容元素变换应用
+   * 优化的双内容元素变换应用 - 修复空白区域问题
    * 专门用于无缝滚动的双内容元素场景
    * @param content1 第一个内容元素
    * @param content2 第二个内容元素
@@ -333,14 +336,23 @@ export class TransformManager {
       // 计算两个内容元素的变换
       const transform1 = this.generateTransformString(position, direction);
       
-      // 计算第二个内容元素的位置
+      // 计算第二个内容元素的位置，确保无缝滚动且无空白区域
       let content2Position: number;
       
       if (direction === 'up') {
         // up 方向：第二个内容在第一个内容的上方
         content2Position = position - contentSize;
+      } else if (direction === 'down') {
+        // down 方向：修复上侧空白 - 第二个内容应该紧跟第一个内容
+        content2Position = position - contentSize;
+      } else if (direction === 'left') {
+        // left 方向：第二个内容在第一个内容的右方
+        content2Position = position + contentSize;
+      } else if (direction === 'right') {
+        // right 方向：修复左侧空白 - 第二个内容应该紧跟第一个内容
+        content2Position = position - contentSize;
       } else {
-        // 其他方向：第二个内容在第一个内容的后方
+        // 默认情况
         content2Position = position + contentSize;
       }
       

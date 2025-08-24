@@ -8,6 +8,7 @@ import { DirectionHandler } from './utils/DirectionHandler';
 import { PositionCalculator } from './utils/PositionCalculator';
 import { TransformManager } from './utils/TransformManager';
 import { ErrorHandler, ScrollDirectionError } from './utils/ErrorHandler';
+import { HoverPositionManager } from './utils/HoverPositionManager';
 
 /**
  * 扩展选项接口，添加 renderItem
@@ -609,7 +610,7 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
-   * 创建滚动动画 - 重构后的版本，修复所有方向的动画逻辑
+   * 创建滚动动画 - 使用增强的位置验证和运行时空白区域监控
    */
   private createScrollAnimation(state: ScrollState, index: number) {
     const direction = this.options.direction;
@@ -624,8 +625,12 @@ export class ScrollEngine implements ScrollSeamlessController {
       container.offsetWidth : 
       container.offsetHeight;
     
-    // 设置初始位置 - 修复所有方向的初始定位
+    // 设置初始位置 - 使用增强的初始定位
     this.setupInitialPositioning(state, contentSize, direction);
+    
+    // 运行时监控计数器
+    let blankAreaCheckCounter = 0;
+    const BLANK_AREA_CHECK_INTERVAL = 30; // 每30帧检查一次空白区域
     
     return {
       id: state.animationId!,
@@ -633,85 +638,584 @@ export class ScrollEngine implements ScrollSeamlessController {
       callback: (timestamp: number) => {
         if (!this.running) return false;
         
-        const step = this.options.step;
-        
-        // 使用 DirectionHandler 的标准化位置计算逻辑
-        const nextPosition = DirectionHandler.calculateNextPosition(
-          state.position,
-          step,
-          contentSize,
-          direction
-        );
-        
-        // 验证位置计算的准确性（在测试环境中跳过验证以避免无限循环）
-        if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
-          const validation = PositionCalculator.validatePositionCalculation(
-            nextPosition,
+        try {
+          const step = this.options.step;
+          
+          // 使用 DirectionHandler 的标准化位置计算逻辑
+          const nextPosition = DirectionHandler.calculateNextPosition(
+            state.position,
+            step,
             contentSize,
-            containerSize,
             direction
           );
           
+          // 集成增强的位置验证到动画循环
+          const validation = this.performEnhancedPositionValidation(
+            nextPosition,
+            contentSize,
+            containerSize,
+            direction,
+            state,
+            index
+          );
+          
           if (!validation.isValid) {
-            console.warn('Position calculation validation failed:', validation.issues);
-            // 重置位置以恢复正常滚动
-            state.position = 0;
-            this.setupInitialPositioning(state, contentSize, direction);
-            return true;
+            // 使用增强的错误恢复
+            return this.handlePositionValidationFailure(
+              validation,
+              state,
+              contentSize,
+              direction,
+              index
+            );
           }
+          
+          // 运行时空白区域监控
+          blankAreaCheckCounter++;
+          if (blankAreaCheckCounter >= BLANK_AREA_CHECK_INTERVAL) {
+            this.performRuntimeBlankAreaMonitoring(state, container, direction, index);
+            blankAreaCheckCounter = 0;
+          }
+          
+          // 使用优化的无缝连接应用变换
+          this.applyEnhancedTransforms(state, nextPosition, direction, contentSize, containerSize);
+          
+          // 更新位置
+          state.position = nextPosition;
+          
+          return true; // 继续动画
+          
+        } catch (error) {
+          console.error(`Animation callback error for state ${index}:`, error);
+          
+          // 触发动画错误事件
+          this.options.onEvent?.('error', {
+            type: 'animationCallbackError',
+            error: error instanceof Error ? error.message : String(error),
+            direction,
+            stateIndex: index,
+            timestamp: Date.now()
+          });
+          
+          // 尝试恢复动画
+          return this.attemptAnimationRecovery(state, direction, index);
         }
-        
-        // 使用 DirectionHandler 应用标准化的变换逻辑
-        this.applyStandardizedTransforms(state, nextPosition, direction);
-        
-        // 更新位置
-        state.position = nextPosition;
-        
-        return true; // 继续动画
       }
     };
   }
 
   /**
-   * 设置初始定位 - 修复所有方向的初始位置设置
+   * 执行增强的位置验证
+   */
+  private performEnhancedPositionValidation(
+    nextPosition: number,
+    contentSize: number,
+    containerSize: number,
+    direction: ScrollDirection,
+    state: ScrollState,
+    index: number
+  ): { isValid: boolean; issues?: string[]; warnings?: string[] } {
+    // 在测试环境中跳过验证以避免无限循环
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+      return { isValid: true };
+    }
+    
+    try {
+      // 使用增强的位置验证
+      const validation = PositionCalculator.validatePositionCalculation(
+        nextPosition,
+        contentSize,
+        containerSize,
+        direction
+      );
+      
+      // 记录验证结果
+      if (!validation.isValid) {
+        ErrorHandler.logDebug('Enhanced position validation failed', {
+          nextPosition,
+          contentSize,
+          containerSize,
+          direction,
+          stateIndex: index,
+          issues: validation.issues
+        });
+      }
+      
+      return validation;
+      
+    } catch (error) {
+      console.warn(`Position validation error for state ${index}:`, error);
+      
+      // 验证失败时返回有效结果以继续动画
+      return {
+        isValid: true,
+        warnings: [`Validation error: ${error instanceof Error ? error.message : String(error)}`]
+      };
+    }
+  }
+
+  /**
+   * 处理位置验证失败
+   */
+  private handlePositionValidationFailure(
+    validation: { isValid: boolean; issues?: string[]; warnings?: string[] },
+    state: ScrollState,
+    contentSize: number,
+    direction: ScrollDirection,
+    index: number
+  ): boolean {
+    console.warn(`Position validation failed for state ${index}:`, validation.issues);
+    
+    try {
+      // 尝试修复位置
+      const container = state.content1.parentElement as HTMLElement;
+      const containerSize = DirectionHandler.isHorizontal(direction) ? 
+        container.offsetWidth : 
+        container.offsetHeight;
+      
+      // 使用优化的无缝连接进行位置修复
+      const seamlessResult = PositionCalculator.optimizeSeamlessConnection(
+        state.position,
+        contentSize,
+        containerSize,
+        direction
+      );
+      
+      if (seamlessResult.shouldReset) {
+        // 重置位置并重新初始化
+        state.position = 0;
+        this.setupInitialPositioning(state, contentSize, direction);
+        
+        ErrorHandler.logDebug('Position reset due to validation failure', {
+          stateIndex: index,
+          direction,
+          previousPosition: state.position
+        });
+      } else {
+        // 应用优化的变换
+        state.content1.style.transform = seamlessResult.content1Transform;
+        state.content2.style.transform = seamlessResult.content2Transform;
+      }
+      
+      return true; // 继续动画
+      
+    } catch (error) {
+      console.error(`Position validation recovery failed for state ${index}:`, error);
+      
+      // 最后的回退：重置到安全状态
+      state.position = 0;
+      this.applyBasicInitialPositioning(state, direction);
+      
+      return true; // 继续动画
+    }
+  }
+
+  /**
+   * 执行运行时空白区域监控
+   */
+  private performRuntimeBlankAreaMonitoring(
+    state: ScrollState,
+    container: HTMLElement,
+    direction: ScrollDirection,
+    index: number
+  ): void {
+    try {
+      // 检测并修复空白区域
+      const blankAreaResult = PositionCalculator.detectAndFixBlankAreas(
+        state.content1,
+        state.content2,
+        container,
+        direction
+      );
+      
+      if (blankAreaResult.hasBlankAreas) {
+        if (blankAreaResult.fixedAreas && blankAreaResult.fixedAreas.length > 0) {
+          ErrorHandler.logDebug('Runtime blank area fix applied', {
+            stateIndex: index,
+            direction,
+            fixedAreas: blankAreaResult.fixedAreas
+          });
+        }
+        
+        if (blankAreaResult.errors && blankAreaResult.errors.length > 0) {
+          console.warn(`Runtime blank area detection issues for state ${index}:`, blankAreaResult.errors);
+        }
+      }
+      
+    } catch (error) {
+      console.warn(`Runtime blank area monitoring failed for state ${index}:`, error);
+    }
+  }
+
+  /**
+   * 应用增强的变换
+   */
+  private applyEnhancedTransforms(
+    state: ScrollState,
+    position: number,
+    direction: ScrollDirection,
+    contentSize: number,
+    containerSize: number
+  ): void {
+    try {
+      // 使用优化的无缝连接逻辑
+      const seamlessResult = PositionCalculator.optimizeSeamlessConnection(
+        position,
+        contentSize,
+        containerSize,
+        direction
+      );
+      
+      // 应用优化后的变换
+      state.content1.style.transform = seamlessResult.content1Transform;
+      state.content2.style.transform = seamlessResult.content2Transform;
+      
+      // 如果需要重置位置，更新状态
+      if (seamlessResult.shouldReset) {
+        state.position = 0;
+        // 重新应用初始定位以确保无空白
+        this.setupInitialPositioning(state, contentSize, direction);
+      }
+      
+    } catch (error) {
+      console.warn('Enhanced transform application failed, using fallback:', error);
+      
+      // 回退到标准化变换应用
+      this.applyStandardizedTransforms(state, position, direction);
+    }
+  }
+
+  /**
+   * 尝试动画恢复
+   */
+  private attemptAnimationRecovery(
+    state: ScrollState,
+    direction: ScrollDirection,
+    index: number
+  ): boolean {
+    try {
+      // 重置到安全状态
+      state.position = 0;
+      this.applyBasicInitialPositioning(state, direction);
+      
+      ErrorHandler.logDebug('Animation recovery applied', {
+        stateIndex: index,
+        direction
+      });
+      
+      return true; // 继续动画
+      
+    } catch (error) {
+      console.error(`Animation recovery failed for state ${index}:`, error);
+      
+      // 停止这个特定的动画
+      if (state.animationId) {
+        rafScheduler.unschedule(state.animationId);
+        state.animationId = null;
+      }
+      
+      return false; // 停止动画
+    }
+  }
+
+  /**
+   * 设置初始定位 - 使用增强的方法修复所有方向的初始位置设置，包括空白区域修复
    */
   private setupInitialPositioning(state: ScrollState, contentSize: number, direction: ScrollDirection): void {
-    // 使用 PositionCalculator 的验证和修复方法
-    PositionCalculator.validateAndFixInitialPositioning(
-      state.content1,
-      state.content2,
-      contentSize,
-      direction
-    );
+    try {
+      // 获取容器元素
+      const container = state.content1.parentElement as HTMLElement;
+      if (!container) {
+        throw new Error('Container element not found');
+      }
+      
+      const containerSize = DirectionHandler.isHorizontal(direction) ? 
+        container.offsetWidth : 
+        container.offsetHeight;
+      
+      // 实现内容预填充机制，避免滚动开始时的空白
+      const preFillingResult = PositionCalculator.implementContentPreFilling(
+        state.content1,
+        state.content2,
+        containerSize,
+        direction
+      );
+      
+      if (!preFillingResult.success) {
+        console.warn('Content pre-filling failed, using standard positioning');
+        // 使用标准的验证和修复方法作为回退
+        PositionCalculator.validateAndFixInitialPositioning(
+          state.content1,
+          state.content2,
+          contentSize,
+          direction
+        );
+      } else {
+        // 记录成功的预填充操作
+        ErrorHandler.logDebug('Content pre-filling successful', {
+          direction,
+          containerSize,
+          contentSize,
+          filledAreas: preFillingResult.filledAreas
+        });
+      }
+      
+      // 检测并修复空白区域
+      const blankAreaResult = PositionCalculator.detectAndFixBlankAreas(
+        state.content1,
+        state.content2,
+        container,
+        direction
+      );
+      
+      if (blankAreaResult.hasBlankAreas) {
+        if (blankAreaResult.fixedAreas && blankAreaResult.fixedAreas.length > 0) {
+          ErrorHandler.logDebug('Fixed blank areas during initial positioning', {
+            direction,
+            fixedAreas: blankAreaResult.fixedAreas
+          });
+        }
+        
+        if (blankAreaResult.errors && blankAreaResult.errors.length > 0) {
+          console.warn('Blank area detection had issues:', blankAreaResult.errors);
+        }
+      }
+      
+      // 确保所有方向使用增强的定位逻辑
+      this.applyEnhancedInitialPositioning(state, direction, containerSize, contentSize);
+      
+      // 验证初始定位结果
+      this.validateInitialPositioning(state, direction, containerSize);
+      
+    } catch (error) {
+      console.error('Enhanced initial positioning failed:', error);
+      
+      // 回退到基本定位
+      this.applyBasicInitialPositioning(state, direction);
+      
+      // 触发错误事件
+      this.options.onEvent?.('error', {
+        type: 'initialPositioningFailure',
+        error: error instanceof Error ? error.message : String(error),
+        direction,
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  /**
+   * 应用增强的初始定位逻辑
+   */
+  private applyEnhancedInitialPositioning(
+    state: ScrollState, 
+    direction: ScrollDirection, 
+    containerSize: number, 
+    contentSize: number
+  ): void {
+    // 使用 DirectionHandler 的配置确保一致性
+    const config = DirectionHandler.getDirectionConfig(direction);
     
-    // 初始化变换为0
+    // 为所有方向应用增强的定位逻辑
+    if (config.isHorizontal) {
+      // 水平方向增强定位
+      this.applyHorizontalEnhancedPositioning(state, direction, containerSize, contentSize);
+    } else {
+      // 垂直方向增强定位
+      this.applyVerticalEnhancedPositioning(state, direction, containerSize, contentSize);
+    }
+    
+    // 初始化变换为0，确保从正确位置开始
     DirectionHandler.applyTransform(state.content1, 0, direction);
     DirectionHandler.applyTransform(state.content2, 0, direction);
   }
 
   /**
-   * 应用标准化的变换逻辑 - 使用优化的批量变换应用
+   * 应用水平方向增强定位
+   */
+  private applyHorizontalEnhancedPositioning(
+    state: ScrollState, 
+    direction: ScrollDirection, 
+    containerSize: number, 
+    contentSize: number
+  ): void {
+    // 确保 content1 在起始位置
+    state.content1.style.left = '0px';
+    
+    // 根据方向设置 content2 的位置
+    if (direction === 'left') {
+      // 左滚动：content2 在右侧等待
+      state.content2.style.left = `${contentSize}px`;
+    } else {
+      // 右滚动：content2 在左侧等待，使用增强的定位避免空白
+      state.content2.style.left = `${-contentSize}px`;
+    }
+  }
+
+  /**
+   * 应用垂直方向增强定位
+   */
+  private applyVerticalEnhancedPositioning(
+    state: ScrollState, 
+    direction: ScrollDirection, 
+    containerSize: number, 
+    contentSize: number
+  ): void {
+    // 确保 content1 在起始位置
+    state.content1.style.top = '0px';
+    
+    // 根据方向设置 content2 的位置
+    if (direction === 'up') {
+      // 上滚动：content2 在下方等待
+      state.content2.style.top = `${contentSize}px`;
+    } else {
+      // 下滚动：content2 在上方等待，使用增强的定位避免空白
+      state.content2.style.top = `${-contentSize}px`;
+    }
+  }
+
+  /**
+   * 验证初始定位结果
+   */
+  private validateInitialPositioning(
+    state: ScrollState, 
+    direction: ScrollDirection, 
+    containerSize: number
+  ): void {
+    const config = DirectionHandler.getDirectionConfig(direction);
+    
+    // 验证位置属性是否正确设置
+    const content1Position = state.content1.style[config.positionProperty];
+    const content2Position = state.content2.style[config.positionProperty];
+    
+    if (!content1Position || !content2Position) {
+      throw new Error(`Initial positioning validation failed: missing ${config.positionProperty} values`);
+    }
+    
+    // 验证变换是否正确初始化
+    const content1Transform = state.content1.style.transform;
+    const content2Transform = state.content2.style.transform;
+    
+    if (!content1Transform.includes(config.transformProperty) || 
+        !content2Transform.includes(config.transformProperty)) {
+      throw new Error(`Initial transform validation failed: expected ${config.transformProperty}`);
+    }
+  }
+
+  /**
+   * 应用基本初始定位（回退方案）
+   */
+  private applyBasicInitialPositioning(state: ScrollState, direction: ScrollDirection): void {
+    const config = DirectionHandler.getDirectionConfig(direction);
+    
+    // 重置所有样式
+    state.content1.style.transform = '';
+    state.content2.style.transform = '';
+    state.content1.style[config.positionProperty] = '';
+    state.content2.style[config.positionProperty] = '';
+    
+    // 设置基本位置
+    state.content1.style[config.positionProperty] = '0px';
+    state.content2.style[config.positionProperty] = '100px';
+    
+    // 应用基本变换
+    DirectionHandler.applyTransform(state.content1, 0, direction);
+    DirectionHandler.applyTransform(state.content2, 0, direction);
+    
+    // 重置位置
+    state.position = 0;
+  }
+
+  /**
+   * 应用标准化的变换逻辑 - 使用优化的批量变换应用和无缝连接（回退方案）
    */
   private applyStandardizedTransforms(
     state: ScrollState,
     position: number,
     direction: ScrollDirection
   ): void {
-    // 获取内容尺寸用于第二个内容元素的位置计算
-    const contentSize = PositionCalculator.getContentSize(state.content1, direction);
-    
-    // 使用 TransformManager 的优化无缝变换应用
-    const result = TransformManager.applySeamlessTransforms(
-      state.content1,
-      state.content2,
-      position,
-      contentSize,
-      direction
-    );
-    
-    // 如果批量应用失败，记录错误但不中断动画
-    if (!result.success && result.errors) {
-      console.warn('Transform application had issues:', result.errors);
+    try {
+      // 获取内容尺寸和容器尺寸用于优化计算
+      const contentSize = PositionCalculator.getContentSize(state.content1, direction);
+      const container = state.content1.parentElement as HTMLElement;
+      const containerSize = DirectionHandler.isHorizontal(direction) ? 
+        container.offsetWidth : 
+        container.offsetHeight;
+      
+      // 使用优化的无缝连接逻辑
+      const seamlessResult = PositionCalculator.optimizeSeamlessConnection(
+        position,
+        contentSize,
+        containerSize,
+        direction
+      );
+      
+      // 应用优化后的变换
+      state.content1.style.transform = seamlessResult.content1Transform;
+      state.content2.style.transform = seamlessResult.content2Transform;
+      
+      // 如果需要重置位置，更新状态
+      if (seamlessResult.shouldReset) {
+        state.position = 0;
+        // 重新应用初始定位以确保无空白
+        this.setupInitialPositioning(state, contentSize, direction);
+      }
+      
+    } catch (optimizedError) {
+      console.warn('Optimized transform application failed, using TransformManager fallback:', optimizedError);
+      
+      try {
+        // 回退到 TransformManager 的批量应用
+        const contentSize = PositionCalculator.getContentSize(state.content1, direction);
+        const result = TransformManager.applySeamlessTransforms(
+          state.content1,
+          state.content2,
+          position,
+          contentSize,
+          direction
+        );
+        
+        if (!result.success && result.errors) {
+          console.warn('TransformManager fallback had issues:', result.errors);
+          
+          // 最后的回退：使用基本变换
+          this.applyBasicTransforms(state, position, direction);
+        }
+        
+      } catch (fallbackError) {
+        console.error('All transform methods failed, using basic transforms:', fallbackError);
+        
+        // 最后的回退：使用基本变换
+        this.applyBasicTransforms(state, position, direction);
+      }
+    }
+  }
+
+  /**
+   * 应用基本变换（最后的回退方案）
+   */
+  private applyBasicTransforms(
+    state: ScrollState,
+    position: number,
+    direction: ScrollDirection
+  ): void {
+    try {
+      const config = DirectionHandler.getDirectionConfig(direction);
+      
+      // 应用基本变换
+      state.content1.style.transform = `${config.transformProperty}(${position}px)`;
+      state.content2.style.transform = `${config.transformProperty}(${position}px)`;
+      
+    } catch (error) {
+      console.error('Basic transform application failed:', error);
+      
+      // 触发严重错误事件
+      this.options.onEvent?.('error', {
+        type: 'criticalTransformFailure',
+        error: error instanceof Error ? error.message : String(error),
+        direction,
+        position,
+        timestamp: Date.now()
+      });
     }
   }
 
@@ -734,101 +1238,286 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
-   * 暂停滚动（保持当前位置）- 增强版本，确保所有方向下正确暂停
+   * 暂停滚动（保持当前位置）- 使用增强的 HoverPositionManager 实现精确暂停
    */
   public pause(): void {
     if (!this.running) return;
     
     try {
-      // 记录暂停前的状态用于验证
-      const pauseStates = this.capturePauseStates();
+      // 获取所有活动状态
+      const allStates = [...this.rowStates, ...this.colStates];
       
-      // 暂停所有动画，但保持running状态和位置
-      [...this.rowStates, ...this.colStates].forEach((state, index) => {
-        if (state.animationId) {
-          // 在暂停前记录精确的当前位置
-          const currentPosition = this.getCurrentAnimationPosition(state, this.options.direction);
-          if (currentPosition !== null) {
-            state.position = currentPosition;
-          }
-          
-          // 暂停动画
-          rafScheduler.pause(state.animationId);
-          
-          // 确保变换状态与暂停位置完全一致
-          this.freezeTransformAtCurrentPosition(state, this.options.direction);
-          
-          // 验证暂停后位置保持不变
-          this.validatePauseState(state, pauseStates[index], index);
+      if (allStates.length === 0) {
+        console.warn('No active states found for pause operation');
+        return;
+      }
+      
+      // 创建暂停前的位置快照
+      const beforeSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `pause-before-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create before-pause snapshot for state ${index}:`, error);
+          return null;
         }
       });
       
-      // 触发暂停事件
+      // 暂停所有动画的 RAF 调度
+      const pausedAnimations: string[] = [];
+      allStates.forEach((state, index) => {
+        if (state.animationId) {
+          try {
+            rafScheduler.pause(state.animationId);
+            pausedAnimations.push(state.animationId);
+          } catch (error) {
+            console.warn(`Failed to pause animation for state ${index}:`, error);
+          }
+        }
+      });
+      
+      // 使用增强的 HoverPositionManager 精确暂停位置
+      const batchResult = HoverPositionManager.batchPositionManagement(
+        allStates, 
+        this.options.direction, 
+        'pause',
+        {
+          createSnapshots: true,
+          validateContinuity: true,
+          tolerance: 0.5,
+          errorRecovery: true
+        }
+      );
+      
+      // 创建暂停后的位置快照并验证连续性
+      const afterSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `pause-after-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create after-pause snapshot for state ${index}:`, error);
+          return null;
+        }
+      });
+      
+      // 验证每个状态的位置连续性
+      let continuityIssues = 0;
+      beforeSnapshots.forEach((beforeSnapshot, index) => {
+        const afterSnapshot = afterSnapshots[index];
+        
+        if (!beforeSnapshot || !afterSnapshot) {
+          continuityIssues++;
+          return;
+        }
+        
+        try {
+          const continuityResult = HoverPositionManager.validatePositionContinuity(
+            beforeSnapshot, 
+            afterSnapshot
+          );
+          
+          if (!continuityResult.isValid) {
+            console.warn(`Pause position continuity validation failed for state ${index}:`, {
+              issues: continuityResult.issues,
+              positionDifference: continuityResult.positionDifference,
+              transformDifference: continuityResult.transformDifference
+            });
+            continuityIssues++;
+            
+            // 尝试修复位置连续性问题
+            this.attemptPositionContinuityFix(allStates[index], beforeSnapshot, this.options.direction, index);
+          }
+        } catch (error) {
+          console.warn(`Position continuity validation error for state ${index}:`, error);
+          continuityIssues++;
+        }
+      });
+      
+      // 触发增强的暂停事件
       this.options.onEvent?.('pause', { 
         direction: this.options.direction,
         timestamp: Date.now(),
-        pausedStates: pauseStates.length
+        pausedStates: allStates.length,
+        pausedAnimations: pausedAnimations.length,
+        continuityIssues,
+        batchResult: batchResult ? {
+          successfulOperations: batchResult.successfulOperations,
+          failedOperations: batchResult.failedOperations,
+          totalTime: batchResult.totalTime
+        } : undefined,
+        positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
+      });
+      
+      // 记录暂停操作的详细信息
+      ErrorHandler.logDebug('Enhanced pause operation completed', {
+        direction: this.options.direction,
+        pausedStates: allStates.length,
+        pausedAnimations: pausedAnimations.length,
+        continuityIssues,
+        batchOperationSuccess: batchResult?.successfulOperations || 0
       });
       
     } catch (error) {
-      console.error('Pause operation failed:', error);
+      console.error('Enhanced pause operation failed:', error);
+      
+      // 尝试基本暂停作为回退
+      this.attemptBasicPause();
       
       // 触发错误事件
       this.options.onEvent?.('error', {
         type: 'pauseFailure',
         error: error instanceof Error ? error.message : String(error),
         direction: this.options.direction,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        recovery: 'basicPauseAttempted'
       });
     }
   }
 
   /**
-   * 恢复滚动（从当前位置继续）- 增强版本，确保所有方向下正确恢复
+   * 恢复滚动（从当前位置继续）- 使用增强的 HoverPositionManager 实现精确恢复
    */
   public resume(): void {
     if (!this.running) return;
     
     try {
-      // 记录恢复前的状态
-      const resumeStates = this.captureResumeStates();
+      // 获取所有活动状态
+      const allStates = [...this.rowStates, ...this.colStates];
       
-      // 恢复所有动画
-      [...this.rowStates, ...this.colStates].forEach((state, index) => {
-        if (state.animationId) {
-          // 验证恢复前的状态
-          this.validateResumeState(state, resumeStates[index], index);
-          
-          // 确保恢复位置的准确性
-          this.validateResumePosition(state, this.options.direction);
-          
-          // 恢复动画
-          rafScheduler.resume(state.animationId);
-          
-          // 确保变换状态正确应用并与位置同步
-          this.synchronizeTransformWithPosition(state, this.options.direction);
-          
-          // 验证恢复后的动画状态
-          this.validatePostResumeState(state, index);
+      if (allStates.length === 0) {
+        console.warn('No active states found for resume operation');
+        return;
+      }
+      
+      // 创建恢复前的位置快照
+      const beforeSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `resume-before-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create before-resume snapshot for state ${index}:`, error);
+          return null;
         }
       });
       
-      // 触发恢复事件
+      // 使用增强的 HoverPositionManager 精确恢复位置
+      const batchResult = HoverPositionManager.batchPositionManagement(
+        allStates, 
+        this.options.direction, 
+        'resume',
+        {
+          createSnapshots: true,
+          validateContinuity: true,
+          tolerance: 0.5,
+          errorRecovery: true
+        }
+      );
+      
+      // 恢复所有动画的 RAF 调度
+      const resumedAnimations: string[] = [];
+      allStates.forEach((state, index) => {
+        if (state.animationId) {
+          try {
+            rafScheduler.resume(state.animationId);
+            resumedAnimations.push(state.animationId);
+          } catch (error) {
+            console.warn(`Failed to resume animation for state ${index}:`, error);
+          }
+        }
+      });
+      
+      // 创建恢复后的位置快照并验证连续性
+      const afterSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `resume-after-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create after-resume snapshot for state ${index}:`, error);
+          return null;
+        }
+      });
+      
+      // 验证每个状态的位置连续性
+      let continuityIssues = 0;
+      beforeSnapshots.forEach((beforeSnapshot, index) => {
+        const afterSnapshot = afterSnapshots[index];
+        
+        if (!beforeSnapshot || !afterSnapshot) {
+          continuityIssues++;
+          return;
+        }
+        
+        try {
+          const continuityResult = HoverPositionManager.validatePositionContinuity(
+            beforeSnapshot, 
+            afterSnapshot
+          );
+          
+          if (!continuityResult.isValid) {
+            console.warn(`Resume position continuity validation failed for state ${index}:`, {
+              issues: continuityResult.issues,
+              positionDifference: continuityResult.positionDifference,
+              transformDifference: continuityResult.transformDifference
+            });
+            continuityIssues++;
+            
+            // 尝试修复位置连续性问题
+            this.attemptPositionContinuityFix(allStates[index], beforeSnapshot, this.options.direction, index);
+          }
+        } catch (error) {
+          console.warn(`Position continuity validation error for state ${index}:`, error);
+          continuityIssues++;
+        }
+      });
+      
+      // 验证恢复后的动画状态
+      this.validateResumedAnimationStates(allStates);
+      
+      // 触发增强的恢复事件
       this.options.onEvent?.('resume', { 
         direction: this.options.direction,
         timestamp: Date.now(),
-        resumedStates: resumeStates.length
+        resumedStates: allStates.length,
+        resumedAnimations: resumedAnimations.length,
+        continuityIssues,
+        batchResult: batchResult ? {
+          successfulOperations: batchResult.successfulOperations,
+          failedOperations: batchResult.failedOperations,
+          totalTime: batchResult.totalTime
+        } : undefined,
+        positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
+      });
+      
+      // 记录恢复操作的详细信息
+      ErrorHandler.logDebug('Enhanced resume operation completed', {
+        direction: this.options.direction,
+        resumedStates: allStates.length,
+        resumedAnimations: resumedAnimations.length,
+        continuityIssues,
+        batchOperationSuccess: batchResult?.successfulOperations || 0
       });
       
     } catch (error) {
-      console.error('Resume operation failed:', error);
+      console.error('Enhanced resume operation failed:', error);
+      
+      // 尝试基本恢复作为回退
+      this.attemptBasicResume();
       
       // 触发错误事件
       this.options.onEvent?.('error', {
         type: 'resumeFailure',
         error: error instanceof Error ? error.message : String(error),
         direction: this.options.direction,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        recovery: 'basicResumeAttempted'
       });
       
       // 尝试恢复操作
@@ -876,31 +1565,357 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
-   * 处理错误的通用方法
+   * 处理错误的通用方法 - 增强版本，包含全面的错误处理和回退机制
    * @param error 错误对象
+   * @param context 错误上下文信息
    */
-  private handleError(error: Error): void {
-    // 触发错误事件
-    this.options.onEvent?.('error', {
-      type: 'criticalError',
-      error: error.message,
-      stack: error.stack,
-      timestamp: Date.now(),
-      direction: this.options.direction
-    });
-
-    // 尝试基本恢复
+  private handleError(error: Error, context?: { operation?: string; stateIndex?: number; recovery?: string }): void {
     try {
-      this.stop();
-      ErrorHandler.logDebug('Attempting basic error recovery');
-    } catch (recoveryError) {
-      ErrorHandler.logError({
-        code: ScrollDirectionError.ANIMATION_SYNC_FAILED,
-        message: `Error recovery failed: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}`,
-        context: { originalError: error.message, recoveryError },
+      // 记录错误详情
+      const errorDetails = {
+        type: 'criticalError',
+        error: error.message,
+        stack: error.stack,
         timestamp: Date.now(),
-        recoverable: false
+        direction: this.options.direction,
+        context: context || {},
+        systemInfo: this.getSystemInfo()
+      };
+
+      // 触发错误事件
+      this.options.onEvent?.('error', errorDetails);
+
+      // 根据错误类型选择恢复策略
+      const recoveryStrategy = this.determineRecoveryStrategy(error, context);
+      
+      // 执行恢复策略
+      this.executeRecoveryStrategy(recoveryStrategy, error, context);
+
+      // 记录恢复尝试
+      ErrorHandler.logDebug('Error recovery strategy executed', {
+        strategy: recoveryStrategy,
+        originalError: error.message,
+        context
       });
+
+    } catch (handlingError) {
+      // 错误处理本身失败时的最后回退
+      console.error('Critical: Error handling failed:', handlingError);
+      
+      // 尝试最基本的恢复
+      this.executeEmergencyRecovery();
+    }
+  }
+
+  /**
+   * 确定恢复策略
+   */
+  private determineRecoveryStrategy(
+    error: Error, 
+    context?: { operation?: string; stateIndex?: number; recovery?: string }
+  ): 'gracefulDegradation' | 'positionReset' | 'fullRestart' | 'emergencyStop' {
+    const errorMessage = error.message.toLowerCase();
+    
+    // 基于错误类型和上下文确定策略
+    if (context?.operation === 'pause' || context?.operation === 'resume') {
+      return 'gracefulDegradation';
+    }
+    
+    if (errorMessage.includes('position') || errorMessage.includes('transform')) {
+      return 'positionReset';
+    }
+    
+    if (errorMessage.includes('animation') || errorMessage.includes('raf')) {
+      return 'fullRestart';
+    }
+    
+    if (errorMessage.includes('container') || errorMessage.includes('element')) {
+      return 'emergencyStop';
+    }
+    
+    // 默认策略
+    return 'gracefulDegradation';
+  }
+
+  /**
+   * 执行恢复策略
+   */
+  private executeRecoveryStrategy(
+    strategy: 'gracefulDegradation' | 'positionReset' | 'fullRestart' | 'emergencyStop',
+    error: Error,
+    context?: { operation?: string; stateIndex?: number; recovery?: string }
+  ): void {
+    try {
+      switch (strategy) {
+        case 'gracefulDegradation':
+          this.executeGracefulDegradation(error, context);
+          break;
+          
+        case 'positionReset':
+          this.executePositionReset(error, context);
+          break;
+          
+        case 'fullRestart':
+          this.executeFullRestart(error, context);
+          break;
+          
+        case 'emergencyStop':
+          this.executeEmergencyStop(error, context);
+          break;
+          
+        default:
+          this.executeGracefulDegradation(error, context);
+      }
+    } catch (strategyError) {
+      console.error(`Recovery strategy '${strategy}' failed:`, strategyError);
+      this.executeEmergencyRecovery();
+    }
+  }
+
+  /**
+   * 执行优雅降级恢复
+   */
+  private executeGracefulDegradation(error: Error, context?: any): void {
+    try {
+      // 保持动画运行，但禁用增强功能
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      allStates.forEach((state, index) => {
+        if (context?.stateIndex !== undefined && index !== context.stateIndex) {
+          return; // 只处理特定状态
+        }
+        
+        try {
+          // 确保基本变换仍然工作
+          this.applyBasicTransforms(state, state.position, this.options.direction);
+          
+          // 验证动画仍在运行
+          if (state.animationId && !rafScheduler.isScheduled(state.animationId)) {
+            const newAnimationId = AnimationHelper.generateId('recovery');
+            state.animationId = newAnimationId;
+            const basicAnimation = this.createBasicAnimation(state, index);
+            rafScheduler.schedule(basicAnimation);
+          }
+        } catch (stateError) {
+          console.warn(`Graceful degradation failed for state ${index}:`, stateError);
+        }
+      });
+      
+      // 触发降级事件
+      this.options.onEvent?.('degradation', {
+        type: 'gracefulDegradation',
+        reason: error.message,
+        timestamp: Date.now(),
+        affectedStates: context?.stateIndex !== undefined ? 1 : allStates.length
+      });
+      
+    } catch (degradationError) {
+      console.error('Graceful degradation failed:', degradationError);
+      this.executePositionReset(error, context);
+    }
+  }
+
+  /**
+   * 执行位置重置恢复
+   */
+  private executePositionReset(error: Error, context?: any): void {
+    try {
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      allStates.forEach((state, index) => {
+        try {
+          // 重置位置到安全状态
+          state.position = 0;
+          
+          // 重新应用初始定位
+          this.applyBasicInitialPositioning(state, this.options.direction);
+          
+          // 重新启动动画（如果需要）
+          if (this.running && state.animationId) {
+            rafScheduler.unschedule(state.animationId);
+            const newAnimationId = AnimationHelper.generateId('reset');
+            state.animationId = newAnimationId;
+            const basicAnimation = this.createBasicAnimation(state, index);
+            rafScheduler.schedule(basicAnimation);
+          }
+        } catch (stateError) {
+          console.warn(`Position reset failed for state ${index}:`, stateError);
+        }
+      });
+      
+      // 触发重置事件
+      this.options.onEvent?.('recovery', {
+        type: 'positionReset',
+        reason: error.message,
+        timestamp: Date.now(),
+        resetStates: allStates.length
+      });
+      
+    } catch (resetError) {
+      console.error('Position reset failed:', resetError);
+      this.executeFullRestart(error, context);
+    }
+  }
+
+  /**
+   * 执行完全重启恢复
+   */
+  private executeFullRestart(error: Error, context?: any): void {
+    try {
+      const wasRunning = this.running;
+      
+      // 停止所有动画
+      this.stop();
+      
+      // 清理所有状态
+      [...this.rowStates, ...this.colStates].forEach(state => {
+        state.position = 0;
+        state.animationId = null;
+        state.content1.style.transform = '';
+        state.content2.style.transform = '';
+      });
+      
+      // 重新布局
+      this.layout();
+      
+      // 如果之前在运行，重新启动
+      if (wasRunning && this.shouldScroll()) {
+        setTimeout(() => {
+          try {
+            this.start();
+          } catch (startError) {
+            console.error('Restart failed:', startError);
+            this.executeEmergencyStop(error, context);
+          }
+        }, 100);
+      }
+      
+      // 触发重启事件
+      this.options.onEvent?.('recovery', {
+        type: 'fullRestart',
+        reason: error.message,
+        timestamp: Date.now(),
+        wasRunning
+      });
+      
+    } catch (restartError) {
+      console.error('Full restart failed:', restartError);
+      this.executeEmergencyStop(error, context);
+    }
+  }
+
+  /**
+   * 执行紧急停止
+   */
+  private executeEmergencyStop(error: Error, context?: any): void {
+    try {
+      // 强制停止所有操作
+      this.running = false;
+      
+      // 清理所有动画
+      [...this.rowStates, ...this.colStates].forEach(state => {
+        if (state.animationId) {
+          try {
+            rafScheduler.unschedule(state.animationId);
+          } catch (unscheduleError) {
+            // 忽略取消调度错误
+          }
+          state.animationId = null;
+        }
+      });
+      
+      // 触发紧急停止事件
+      this.options.onEvent?.('emergency', {
+        type: 'emergencyStop',
+        reason: error.message,
+        timestamp: Date.now(),
+        context
+      });
+      
+    } catch (emergencyError) {
+      console.error('Emergency stop failed:', emergencyError);
+      // 最后的回退 - 什么都不做，让系统自然停止
+    }
+  }
+
+  /**
+   * 执行紧急恢复（最后的回退）
+   */
+  private executeEmergencyRecovery(): void {
+    try {
+      // 最基本的恢复操作
+      this.running = false;
+      
+      // 清理动画
+      [...this.rowStates, ...this.colStates].forEach(state => {
+        if (state.animationId) {
+          try {
+            rafScheduler.unschedule(state.animationId);
+          } catch {
+            // 忽略错误
+          }
+          state.animationId = null;
+        }
+      });
+      
+      console.warn('Emergency recovery executed - ScrollEngine stopped');
+      
+    } catch {
+      // 如果连紧急恢复都失败，就什么都不做
+      console.error('Emergency recovery failed - system may be in unstable state');
+    }
+  }
+
+  /**
+   * 创建基本动画（回退方案）
+   */
+  private createBasicAnimation(state: ScrollState, index: number) {
+    return {
+      id: state.animationId!,
+      priority: 1,
+      callback: (timestamp: number) => {
+        if (!this.running) return false;
+        
+        try {
+          // 基本的位置更新
+          state.position += this.options.step;
+          
+          // 基本的变换应用
+          this.applyBasicTransforms(state, state.position, this.options.direction);
+          
+          return true;
+        } catch (error) {
+          console.warn(`Basic animation failed for state ${index}:`, error);
+          return false;
+        }
+      }
+    };
+  }
+
+  /**
+   * 获取系统信息用于错误诊断
+   */
+  private getSystemInfo(): any {
+    try {
+      return {
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        timestamp: Date.now(),
+        performance: typeof performance !== 'undefined' ? performance.now() : Date.now(),
+        memoryUsage: typeof performance !== 'undefined' && performance.memory ? {
+          used: performance.memory.usedJSHeapSize,
+          total: performance.memory.totalJSHeapSize,
+          limit: performance.memory.jsHeapSizeLimit
+        } : undefined,
+        scrollEngineState: {
+          running: this.running,
+          direction: this.options.direction,
+          rowStates: this.rowStates.length,
+          colStates: this.colStates.length,
+          dataLength: this.options.data.length
+        }
+      };
+    } catch (error) {
+      return { error: 'Failed to collect system info' };
     }
   }
 
@@ -1741,77 +2756,284 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
-   * 事件处理器 - 增强版本，确保所有方向下的鼠标悬停行为正确
+   * 事件处理器 - 使用增强的 HoverPositionManager 实现精确的悬停位置管理
    */
   private onMouseEnter(): void {
-    if (this.options.hoverStop && this.running) {
-      try {
-        // 记录悬停前的状态，包含更详细的位置信息
-        const hoverStates = this.captureDetailedHoverStates();
-        
-        // 执行方向感知的暂停操作
-        this.performDirectionAwarePause();
-        
-        // 验证悬停暂停效果，确保所有方向都正确暂停
-        this.validateComprehensiveHoverPause(hoverStates);
-        
-        // 触发悬停事件
-        this.options.onEvent?.('mouseEnter', {
-          direction: this.options.direction,
-          timestamp: Date.now(),
-          hoverStop: true,
-          pausedAnimations: [...this.rowStates, ...this.colStates].length
-        });
-        
-      } catch (error) {
-        console.error('Mouse enter handler failed:', error);
-        
-        this.options.onEvent?.('error', {
-          type: 'mouseEnterFailure',
-          error: error instanceof Error ? error.message : String(error),
-          direction: this.options.direction,
-          timestamp: Date.now()
-        });
-        
-        // 尝试恢复到一致状态
-        this.attemptHoverErrorRecovery();
+    if (!this.options.hoverStop || !this.running) return;
+    
+    try {
+      // 获取所有活动状态
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      if (allStates.length === 0) {
+        console.warn('No active states found for mouse enter event');
+        return;
       }
+      
+      // 创建悬停前的位置快照（带错误处理）
+      const beforeSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `mouseenter-before-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create before-hover snapshot for state ${index}:`, error);
+          return null;
+        }
+      });
+      
+      // 暂停所有动画的 RAF 调度（带错误处理）
+      const pausedAnimations: string[] = [];
+      allStates.forEach((state, index) => {
+        if (state.animationId) {
+          try {
+            rafScheduler.pause(state.animationId);
+            pausedAnimations.push(state.animationId);
+          } catch (error) {
+            console.warn(`Failed to pause animation for state ${index}:`, error);
+          }
+        }
+      });
+      
+      // 使用增强的 HoverPositionManager 精确暂停位置
+      let batchResult;
+      try {
+        batchResult = HoverPositionManager.batchPositionManagement(
+          allStates, 
+          this.options.direction, 
+          'pause',
+          {
+            createSnapshots: true,
+            validateContinuity: true,
+            tolerance: 0.5,
+            errorRecovery: true
+          }
+        );
+      } catch (error) {
+        console.warn('Batch position management failed during mouse enter:', error);
+        // 回退到基本暂停
+        this.attemptBasicPause();
+      }
+      
+      // 创建悬停后的位置快照并验证连续性
+      const afterSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `mouseenter-after-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create after-hover snapshot for state ${index}:`, error);
+          return null;
+        }
+      });
+      
+      // 验证每个状态的位置连续性
+      let continuityIssues = 0;
+      beforeSnapshots.forEach((beforeSnapshot, index) => {
+        const afterSnapshot = afterSnapshots[index];
+        
+        if (!beforeSnapshot || !afterSnapshot) {
+          continuityIssues++;
+          return;
+        }
+        
+        try {
+          const continuityResult = HoverPositionManager.validatePositionContinuity(
+            beforeSnapshot, 
+            afterSnapshot
+          );
+          
+          if (!continuityResult.isValid) {
+            console.warn(`Mouse enter position continuity validation failed for state ${index}:`, {
+              issues: continuityResult.issues,
+              positionDifference: continuityResult.positionDifference,
+              transformDifference: continuityResult.transformDifference
+            });
+            continuityIssues++;
+            
+            // 尝试修复位置连续性问题
+            this.attemptPositionContinuityFix(allStates[index], beforeSnapshot, this.options.direction, index);
+          }
+        } catch (error) {
+          console.warn(`Position continuity validation error for state ${index}:`, error);
+          continuityIssues++;
+        }
+      });
+      
+      // 触发增强的悬停事件
+      this.options.onEvent?.('mouseEnter', {
+        direction: this.options.direction,
+        timestamp: Date.now(),
+        hoverStop: true,
+        pausedAnimations: pausedAnimations.length,
+        continuityIssues,
+        batchResult: batchResult ? {
+          successfulOperations: batchResult.successfulOperations,
+          failedOperations: batchResult.failedOperations,
+          totalTime: batchResult.totalTime
+        } : undefined,
+        positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
+      });
+      
+      // 记录悬停操作的详细信息
+      ErrorHandler.logDebug('Enhanced mouse enter operation completed', {
+        direction: this.options.direction,
+        pausedAnimations: pausedAnimations.length,
+        continuityIssues,
+        batchOperationSuccess: batchResult?.successfulOperations || 0
+      });
+      
+    } catch (error) {
+      console.error('Enhanced mouse enter handler failed:', error);
+      
+      // 使用增强的错误处理
+      this.handleError(error, { operation: 'mouseEnter', recovery: 'hoverErrorRecovery' });
+      
+      // 尝试恢复到一致状态
+      this.attemptHoverErrorRecovery();
     }
   }
 
   private onMouseLeave(): void {
-    if (this.options.hoverStop && this.running && this.shouldScroll()) {
-      try {
-        // 记录离开前的状态，包含暂停时的精确位置
-        const leaveStates = this.captureDetailedLeaveStates();
-        
-        // 执行方向感知的恢复操作
-        this.performDirectionAwareResume();
-        
-        // 验证恢复效果，确保所有方向都正确恢复
-        this.validateComprehensiveHoverResume(leaveStates);
-        
-        // 触发离开事件
-        this.options.onEvent?.('mouseLeave', {
-          direction: this.options.direction,
-          timestamp: Date.now(),
-          hoverStop: true,
-          resumedAnimations: [...this.rowStates, ...this.colStates].length
-        });
-        
-      } catch (error) {
-        console.error('Mouse leave handler failed:', error);
-        
-        this.options.onEvent?.('error', {
-          type: 'mouseLeaveFailure',
-          error: error instanceof Error ? error.message : String(error),
-          direction: this.options.direction,
-          timestamp: Date.now()
-        });
-        
-        // 尝试智能恢复
-        this.attemptIntelligentResume();
+    if (!this.options.hoverStop || !this.running || !this.shouldScroll()) return;
+    
+    try {
+      // 获取所有活动状态
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      if (allStates.length === 0) {
+        console.warn('No active states found for mouse leave event');
+        return;
       }
+      
+      // 创建恢复前的位置快照（带错误处理）
+      const beforeSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `mouseleave-before-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create before-resume snapshot for state ${index}:`, error);
+          return null;
+        }
+      });
+      
+      // 使用增强的 HoverPositionManager 精确恢复位置
+      let batchResult;
+      try {
+        batchResult = HoverPositionManager.batchPositionManagement(
+          allStates, 
+          this.options.direction, 
+          'resume',
+          {
+            createSnapshots: true,
+            validateContinuity: true,
+            tolerance: 0.5,
+            errorRecovery: true
+          }
+        );
+      } catch (error) {
+        console.warn('Batch position management failed during mouse leave:', error);
+        // 回退到基本恢复
+        this.attemptBasicResume();
+      }
+      
+      // 恢复所有动画的 RAF 调度（带错误处理）
+      const resumedAnimations: string[] = [];
+      allStates.forEach((state, index) => {
+        if (state.animationId) {
+          try {
+            rafScheduler.resume(state.animationId);
+            resumedAnimations.push(state.animationId);
+          } catch (error) {
+            console.warn(`Failed to resume animation for state ${index}:`, error);
+          }
+        }
+      });
+      
+      // 创建恢复后的位置快照并验证连续性
+      const afterSnapshots = allStates.map((state, index) => {
+        try {
+          return HoverPositionManager.createPositionSnapshot(state, this.options.direction, {
+            reason: `mouseleave-after-${index}`,
+            performanceTimestamp: performance.now()
+          });
+        } catch (error) {
+          console.warn(`Failed to create after-resume snapshot for state ${index}:`, error);
+          return null;
+        }
+      });
+      
+      // 验证每个状态的位置连续性
+      let continuityIssues = 0;
+      beforeSnapshots.forEach((beforeSnapshot, index) => {
+        const afterSnapshot = afterSnapshots[index];
+        
+        if (!beforeSnapshot || !afterSnapshot) {
+          continuityIssues++;
+          return;
+        }
+        
+        try {
+          const continuityResult = HoverPositionManager.validatePositionContinuity(
+            beforeSnapshot, 
+            afterSnapshot
+          );
+          
+          if (!continuityResult.isValid) {
+            console.warn(`Mouse leave position continuity validation failed for state ${index}:`, {
+              issues: continuityResult.issues,
+              positionDifference: continuityResult.positionDifference,
+              transformDifference: continuityResult.transformDifference
+            });
+            continuityIssues++;
+            
+            // 尝试修复位置连续性问题
+            this.attemptPositionContinuityFix(allStates[index], beforeSnapshot, this.options.direction, index);
+          }
+        } catch (error) {
+          console.warn(`Position continuity validation error for state ${index}:`, error);
+          continuityIssues++;
+        }
+      });
+      
+      // 验证恢复后的动画状态
+      this.validateResumedAnimationStates(allStates);
+      
+      // 触发增强的离开事件
+      this.options.onEvent?.('mouseLeave', {
+        direction: this.options.direction,
+        timestamp: Date.now(),
+        hoverStop: true,
+        resumedAnimations: resumedAnimations.length,
+        continuityIssues,
+        batchResult: batchResult ? {
+          successfulOperations: batchResult.successfulOperations,
+          failedOperations: batchResult.failedOperations,
+          totalTime: batchResult.totalTime
+        } : undefined,
+        positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
+      });
+      
+      // 记录恢复操作的详细信息
+      ErrorHandler.logDebug('Enhanced mouse leave operation completed', {
+        direction: this.options.direction,
+        resumedAnimations: resumedAnimations.length,
+        continuityIssues,
+        batchOperationSuccess: batchResult?.successfulOperations || 0
+      });
+      
+    } catch (error) {
+      console.error('Enhanced mouse leave handler failed:', error);
+      
+      // 使用增强的错误处理
+      this.handleError(error, { operation: 'mouseLeave', recovery: 'intelligentResume' });
+      
+      // 尝试智能恢复
+      this.attemptIntelligentResume();
     }
   }
 
@@ -2398,6 +3620,127 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
+   * 尝试修复位置连续性问题
+   */
+  private attemptPositionContinuityFix(
+    state: ScrollState,
+    referenceSnapshot: any,
+    direction: ScrollDirection,
+    index: number
+  ): void {
+    try {
+      // 使用参考快照的位置信息进行修复
+      if (referenceSnapshot && referenceSnapshot.logicalPosition !== undefined) {
+        state.position = referenceSnapshot.logicalPosition;
+        
+        // 重新应用变换
+        const config = DirectionHandler.getDirectionConfig(direction);
+        state.content1.style.transform = `${config.transformProperty}(${state.position}px)`;
+        state.content2.style.transform = `${config.transformProperty}(${state.position}px)`;
+        
+        ErrorHandler.logDebug('Position continuity fix applied', {
+          stateIndex: index,
+          direction,
+          fixedPosition: state.position
+        });
+      }
+    } catch (error) {
+      console.warn(`Position continuity fix failed for state ${index}:`, error);
+    }
+  }
+
+  /**
+   * 尝试基本暂停操作（回退方案）
+   */
+  private attemptBasicPause(): void {
+    try {
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      // 简单暂停所有动画
+      allStates.forEach(state => {
+        if (state.animationId) {
+          rafScheduler.pause(state.animationId);
+        }
+      });
+      
+      ErrorHandler.logDebug('Basic pause fallback applied');
+      
+    } catch (error) {
+      console.error('Basic pause fallback failed:', error);
+    }
+  }
+
+  /**
+   * 尝试基本恢复操作（回退方案）
+   */
+  private attemptBasicResume(): void {
+    try {
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      // 简单恢复所有动画
+      allStates.forEach(state => {
+        if (state.animationId) {
+          rafScheduler.resume(state.animationId);
+        }
+      });
+      
+      ErrorHandler.logDebug('Basic resume fallback applied');
+      
+    } catch (error) {
+      console.error('Basic resume fallback failed:', error);
+    }
+  }
+
+  /**
+   * 验证恢复后的动画状态
+   */
+  private validateResumedAnimationStates(states: ScrollState[]): void {
+    try {
+      let invalidStates = 0;
+      
+      states.forEach((state, index) => {
+        // 验证动画ID是否存在
+        if (!state.animationId) {
+          console.warn(`State ${index} missing animation ID after resume`);
+          invalidStates++;
+          return;
+        }
+        
+        // 验证位置是否合理
+        if (!isFinite(state.position)) {
+          console.warn(`State ${index} has invalid position after resume:`, state.position);
+          invalidStates++;
+          state.position = 0; // 重置为安全值
+        }
+        
+        // 验证变换是否存在
+        const content1Transform = state.content1.style.transform;
+        const content2Transform = state.content2.style.transform;
+        
+        if (!content1Transform || !content2Transform) {
+          console.warn(`State ${index} missing transforms after resume`);
+          invalidStates++;
+          
+          // 重新应用基本变换
+          const config = DirectionHandler.getDirectionConfig(this.options.direction);
+          state.content1.style.transform = `${config.transformProperty}(${state.position}px)`;
+          state.content2.style.transform = `${config.transformProperty}(${state.position}px)`;
+        }
+      });
+      
+      if (invalidStates > 0) {
+        ErrorHandler.logDebug('Animation state validation found issues', {
+          invalidStates,
+          totalStates: states.length
+        });
+      }
+      
+    } catch (error) {
+      console.warn('Animation state validation failed:', error);
+    }
+  }
+
+  /**
    * 尝试恢复操作恢复
    */
   private attemptResumeRecovery(): void {
@@ -2422,6 +3765,98 @@ export class ScrollEngine implements ScrollSeamlessController {
       
     } catch (error) {
       console.error('Resume recovery attempt failed:', error);
+    }
+  }
+
+  /**
+   * 尝试悬停错误恢复
+   */
+  private attemptHoverErrorRecovery(): void {
+    try {
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      // 尝试恢复到一致状态
+      allStates.forEach((state, index) => {
+        try {
+          // 确保动画处于正确状态
+          if (state.animationId) {
+            // 如果应该暂停但没有暂停，则暂停
+            if (!rafScheduler.isPaused(state.animationId)) {
+              rafScheduler.pause(state.animationId);
+            }
+          }
+          
+          // 确保位置是有效的
+          if (!isFinite(state.position)) {
+            state.position = 0;
+          }
+          
+          // 重新应用基本变换
+          this.applyBasicTransforms(state, state.position, this.options.direction);
+          
+        } catch (stateError) {
+          console.warn(`Hover error recovery failed for state ${index}:`, stateError);
+        }
+      });
+      
+      ErrorHandler.logDebug('Hover error recovery completed');
+      
+    } catch (error) {
+      console.error('Hover error recovery failed:', error);
+    }
+  }
+
+  /**
+   * 尝试智能恢复
+   */
+  private attemptIntelligentResume(): void {
+    try {
+      const allStates = [...this.rowStates, ...this.colStates];
+      
+      // 智能检测当前状态并恢复
+      allStates.forEach((state, index) => {
+        try {
+          if (state.animationId) {
+            // 检查动画是否已经在运行
+            if (rafScheduler.isPaused(state.animationId)) {
+              rafScheduler.resume(state.animationId);
+            } else if (!rafScheduler.isScheduled(state.animationId)) {
+              // 如果动画丢失，重新创建
+              const newAnimationId = AnimationHelper.generateId('intelligent_resume');
+              state.animationId = newAnimationId;
+              const basicAnimation = this.createBasicAnimation(state, index);
+              rafScheduler.schedule(basicAnimation);
+            }
+          }
+          
+          // 验证和修复位置
+          if (!isFinite(state.position)) {
+            state.position = 0;
+          }
+          
+          // 确保变换是正确的
+          this.applyBasicTransforms(state, state.position, this.options.direction);
+          
+        } catch (stateError) {
+          console.warn(`Intelligent resume failed for state ${index}:`, stateError);
+        }
+      });
+      
+      // 触发智能恢复事件
+      this.options.onEvent?.('intelligentResume', {
+        direction: this.options.direction,
+        timestamp: Date.now(),
+        reason: 'mouseLeaveFailure',
+        recoveredStates: allStates.length
+      });
+      
+      ErrorHandler.logDebug('Intelligent resume completed');
+      
+    } catch (error) {
+      console.error('Intelligent resume failed:', error);
+      
+      // 最后的回退：强制恢复
+      this.attemptForceResume();
     }
   }
 

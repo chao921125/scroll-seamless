@@ -296,7 +296,7 @@ describe('Direction Switching Tests', () => {
       // 尝试设置无效方向
       expect(() => {
         scrollEngine.setOptions({ direction: 'invalid' });
-      }).not.toThrow(); // 应该优雅处理错误而不是抛出异常
+      }).toThrow('Invalid direction: invalid. Valid directions are: up, down, left, right'); // 应该抛出异常拒绝无效参数
     });
 
     test('should recover from direction change errors', async () => {

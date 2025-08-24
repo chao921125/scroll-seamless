@@ -277,7 +277,7 @@ describe('Animation Refactor Tests', () => {
     it('应该处理无效方向', () => {
       expect(() => {
         DirectionHandler.getDirectionConfig('invalid');
-      }).toThrow('Invalid scroll direction: invalid');
+      }).toThrow('Invalid direction: invalid. Valid directions are: up, down, left, right');
     });
 
     it('应该验证方向参数', () => {

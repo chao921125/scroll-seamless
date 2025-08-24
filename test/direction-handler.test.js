@@ -65,7 +65,7 @@ describe('DirectionHandler', () => {
     it('应该对无效方向抛出错误', () => {
       expect(() => {
         DirectionHandler.getDirectionConfig('invalid');
-      }).toThrow('Invalid scroll direction: invalid');
+      }).toThrow('Invalid direction: invalid. Valid directions are: up, down, left, right');
     });
   });
 
