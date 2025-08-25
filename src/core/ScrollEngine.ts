@@ -1,9 +1,9 @@
-import { ScrollSeamlessOptions, ScrollSeamlessController, ScrollDirection, ScrollSeamlessPlugin } from '../types';
+import { ScrollSeamlessOptions, ScrollSeamlessController, ScrollDirection } from '../types';
 import { MemoryManager } from './utils/MemoryManager';
 import { ObjectPool } from './utils/ObjectPool';
 import { rafScheduler, AnimationHelper } from './utils/RAFScheduler';
 import { DOMCache } from './utils/DOMCache';
-import { PluginManager } from './plugins/PluginManager';
+
 import { DirectionHandler } from './utils/DirectionHandler';
 import { PositionCalculator } from './utils/PositionCalculator';
 import { TransformManager } from './utils/TransformManager';
@@ -37,7 +37,7 @@ export class ScrollEngine implements ScrollSeamlessController {
   private memoryManager: MemoryManager;
   private domCache: DOMCache;
   private elementPool: ObjectPool<HTMLElement>;
-  private pluginManager: PluginManager;
+
   
   // 状态管理
   private running = false;
@@ -103,15 +103,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       }
     );
     
-    // 初始化插件管理器
-    this.pluginManager = new PluginManager(this);
-    
-    // 注册插件
-    if (this.options.plugins && this.options.plugins.length > 0) {
-      this.options.plugins.forEach(plugin => {
-        this.pluginManager.register(plugin);
-      });
-    }
+
 
     this.initialize();
   }
@@ -134,9 +126,6 @@ export class ScrollEngine implements ScrollSeamlessController {
       rows: 1,
       cols: 1,
       onEvent: () => {},
-      plugins: [],
-      performance: { enabled: true },
-      accessibility: { enabled: true },
       dataDriven: false
     };
 

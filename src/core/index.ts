@@ -15,9 +15,6 @@ export const DEFAULT_OPTIONS: Required<Omit<ScrollSeamlessOptions, 'data'>> = {
   rows: 1,
   cols: 1,
   onEvent: () => {},
-  plugins: [],
-  performance: { enabled: true },
-  accessibility: { enabled: true },
   dataDriven: false
 };
 
@@ -43,9 +40,6 @@ export * from './utils/ObjectPool';
 export * from './utils/RAFScheduler';
 export * from './utils/MemoryManager';
 export * from './utils/DOMCache';
-
-// 导出插件系统
-export * from './plugins';
 
 // 导出工具函数
 export * from './utils';

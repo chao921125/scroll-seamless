@@ -12,8 +12,6 @@
 - [高级用法](#高级用法)
   - [多行多列布局](#多行多列布局)
   - [自定义渲染](#自定义渲染)
-  - [虚拟滚动](#虚拟滚动)
-  - [插件系统](#插件系统)
 - [性能优化](#性能优化)
 - [常见问题](#常见问题)
 
@@ -97,7 +95,6 @@ export default ScrollDemo;
 | `contentClassName` | `string` | - | 内容区类名 |
 | `itemClassName` | `string` | - | 单项类名 |
 | `children` | `Function \| ReactNode` | - | 渲染函数或自定义内容 |
-| `plugins` | `ScrollSeamlessPlugin[]` | `[]` | 插件数组 |
 | `onEvent` | `(event: string, data: any) => void` | - | 事件回调 |
 
 ## 组件方法
@@ -209,7 +206,7 @@ scrollRef.current?.setOptions({
 </ScrollSeamless>
 ```
 
-### 虚拟滚动
+## 性能优化
 
 ```jsx
 import React from "react";
@@ -332,7 +329,7 @@ export default PluginDemo;
 
 ## 性能优化
 
-1. **使用虚拟滚动**：对于大数据集（1000+ 项），始终使用虚拟滚动插件。
+1. **数据分页**：对于大数据集（1000+ 项），考虑使用分页或数据懒加载。
 
 2. **避免频繁更新**：不要在每次渲染周期都调用 `updateData()`，而是在数据真正变化时才调用。
 
