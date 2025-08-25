@@ -88,7 +88,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
     }
 
-    this.container = container;
+    this.container = container!;
     this.options = this.mergeOptions(options);
     
     // 初始化工具类
@@ -944,8 +944,7 @@ export class ScrollEngine implements ScrollSeamlessController {
         ErrorHandler.logDebug('Content pre-filling successful', {
           direction,
           containerSize,
-          contentSize,
-          filledAreas: preFillingResult.filledAreas
+          contentSize
         });
       }
       
@@ -1275,8 +1274,7 @@ export class ScrollEngine implements ScrollSeamlessController {
         {
           createSnapshots: true,
           validateContinuity: true,
-          tolerance: 0.5,
-          errorRecovery: true
+          tolerance: 0.5
         }
       );
       
@@ -1334,9 +1332,9 @@ export class ScrollEngine implements ScrollSeamlessController {
         pausedAnimations: pausedAnimations.length,
         continuityIssues,
         batchResult: batchResult ? {
-          successfulOperations: batchResult.successfulOperations,
-          failedOperations: batchResult.failedOperations,
-          totalTime: batchResult.totalTime
+          successfulOperations: batchResult.summary.successCount,
+          failedOperations: batchResult.summary.failureCount,
+          totalTime: batchResult.summary.totalExecutionTime
         } : undefined,
         positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
       });
@@ -1347,7 +1345,7 @@ export class ScrollEngine implements ScrollSeamlessController {
         pausedStates: allStates.length,
         pausedAnimations: pausedAnimations.length,
         continuityIssues,
-        batchOperationSuccess: batchResult?.successfulOperations || 0
+        batchOperationSuccess: batchResult?.summary.successCount || 0
       });
       
     } catch (error) {
@@ -1403,8 +1401,7 @@ export class ScrollEngine implements ScrollSeamlessController {
         {
           createSnapshots: true,
           validateContinuity: true,
-          tolerance: 0.5,
-          errorRecovery: true
+          tolerance: 0.5
         }
       );
       
@@ -1478,9 +1475,9 @@ export class ScrollEngine implements ScrollSeamlessController {
         resumedAnimations: resumedAnimations.length,
         continuityIssues,
         batchResult: batchResult ? {
-          successfulOperations: batchResult.successfulOperations,
-          failedOperations: batchResult.failedOperations,
-          totalTime: batchResult.totalTime
+          successfulOperations: batchResult.summary.successCount,
+          failedOperations: batchResult.summary.failureCount,
+          totalTime: batchResult.summary.totalExecutionTime
         } : undefined,
         positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
       });
@@ -1491,7 +1488,7 @@ export class ScrollEngine implements ScrollSeamlessController {
         resumedStates: allStates.length,
         resumedAnimations: resumedAnimations.length,
         continuityIssues,
-        batchOperationSuccess: batchResult?.successfulOperations || 0
+        batchOperationSuccess: batchResult?.summary.successCount || 0
       });
       
     } catch (error) {
@@ -1515,14 +1512,26 @@ export class ScrollEngine implements ScrollSeamlessController {
   }
 
   /**
+   * 检查动画是否已调度
+   */
+  private isAnimationScheduled(animationId: string): boolean {
+    return (rafScheduler as any).animations?.has(animationId) || false;
+  }
+
+  /**
+   * 检查动画是否已暂停
+   */
+  private isAnimationPaused(animationId: string): boolean {
+    const animation = (rafScheduler as any).animations?.get(animationId);
+    return animation?.paused || false;
+  }
+
+  /**
    * 销毁实例
    */
   public destroy(): void {
     try {
       this.stop();
-      
-      // 销毁所有插件
-      this.pluginManager.destroyAll();
       
       // 清理资源
       this.memoryManager.destroy();
@@ -1679,7 +1688,7 @@ export class ScrollEngine implements ScrollSeamlessController {
           this.applyBasicTransforms(state, state.position, this.options.direction);
           
           // 验证动画仍在运行
-          if (state.animationId && !rafScheduler.isScheduled(state.animationId)) {
+          if (state.animationId && !this.isAnimationScheduled(state.animationId)) {
             const newAnimationId = AnimationHelper.generateId('recovery');
             state.animationId = newAnimationId;
             const basicAnimation = this.createBasicAnimation(state, index);
@@ -1691,7 +1700,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
       
       // 触发降级事件
-      this.options.onEvent?.('degradation', {
+      this.options.onEvent?.('error', {
         type: 'gracefulDegradation',
         reason: error.message,
         timestamp: Date.now(),
@@ -1733,7 +1742,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
       
       // 触发重置事件
-      this.options.onEvent?.('recovery', {
+      this.options.onEvent?.('resume', {
         type: 'positionReset',
         reason: error.message,
         timestamp: Date.now(),
@@ -1780,7 +1789,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       }
       
       // 触发重启事件
-      this.options.onEvent?.('recovery', {
+      this.options.onEvent?.('start', {
         type: 'fullRestart',
         reason: error.message,
         timestamp: Date.now(),
@@ -1814,7 +1823,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
       
       // 触发紧急停止事件
-      this.options.onEvent?.('emergency', {
+      this.options.onEvent?.('error', {
         type: 'emergencyStop',
         reason: error.message,
         timestamp: Date.now(),
@@ -1890,10 +1899,10 @@ export class ScrollEngine implements ScrollSeamlessController {
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         timestamp: Date.now(),
         performance: typeof performance !== 'undefined' ? performance.now() : Date.now(),
-        memoryUsage: typeof performance !== 'undefined' && performance.memory ? {
-          used: performance.memory.usedJSHeapSize,
-          total: performance.memory.totalJSHeapSize,
-          limit: performance.memory.jsHeapSizeLimit
+        memoryUsage: typeof performance !== 'undefined' && (performance as any).memory ? {
+          used: (performance as any).memory.usedJSHeapSize,
+          total: (performance as any).memory.totalJSHeapSize,
+          limit: (performance as any).memory.jsHeapSizeLimit
         } : undefined,
         scrollEngineState: {
           running: this.running,
@@ -2076,7 +2085,7 @@ export class ScrollEngine implements ScrollSeamlessController {
         const switchDuration = Date.now() - switchStartTime;
 
         // 触发方向切换事件
-        this.options.onEvent?.('directionChange', {
+        this.options.onEvent?.('update', {
           oldDirection,
           newDirection,
           timestamp: Date.now(),
@@ -2307,7 +2316,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       const switchDuration = Date.now() - switchStartTime;
 
       // 触发方向类型切换事件
-      this.options.onEvent?.('directionTypeChange', {
+      this.options.onEvent?.('update', {
         oldDirection,
         newDirection,
         timestamp: Date.now(),
@@ -2590,7 +2599,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       
       // 如果部分恢复失败，触发警告事件
       if (recoveredStates < states.length) {
-        this.options.onEvent?.('warning', {
+        this.options.onEvent?.('error', {
           type: 'partialStateRecovery',
           recoveredStates,
           totalStates: states.length,
@@ -2659,21 +2668,7 @@ export class ScrollEngine implements ScrollSeamlessController {
     });
   }
   
-  /**
-   * 添加插件
-   * @param plugin 插件实例
-   */
-  public addPlugin(plugin: ScrollSeamlessPlugin): void {
-    this.pluginManager.register(plugin);
-  }
-  
-  /**
-   * 移除插件
-   * @param pluginId 插件ID
-   */
-  public removePlugin(pluginId: string): void {
-    this.pluginManager.unregister(pluginId);
-  }
+
   
   /**
    * 获取当前位置
@@ -2724,12 +2719,7 @@ export class ScrollEngine implements ScrollSeamlessController {
    * @returns 性能数据
    */
   public getPerformance(): any {
-    const performancePlugin = this.pluginManager.getPlugin('performance');
-    if (performancePlugin && 'getMetrics' in performancePlugin) {
-      return (performancePlugin as any).getMetrics();
-    }
-    
-    // 如果没有性能插件，返回基本的性能数据
+    // 返回基本的性能数据
     return {
       fps: rafScheduler.getPerformanceMetrics().fps,
       memory: null,
@@ -2795,8 +2785,7 @@ export class ScrollEngine implements ScrollSeamlessController {
           {
             createSnapshots: true,
             validateContinuity: true,
-            tolerance: 0.5,
-            errorRecovery: true
+            tolerance: 0.5
           }
         );
       } catch (error) {
@@ -2852,16 +2841,16 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
       
       // 触发增强的悬停事件
-      this.options.onEvent?.('mouseEnter', {
+      this.options.onEvent?.('pause', {
         direction: this.options.direction,
         timestamp: Date.now(),
         hoverStop: true,
         pausedAnimations: pausedAnimations.length,
         continuityIssues,
         batchResult: batchResult ? {
-          successfulOperations: batchResult.successfulOperations,
-          failedOperations: batchResult.failedOperations,
-          totalTime: batchResult.totalTime
+          successfulOperations: batchResult.summary.successCount,
+          failedOperations: batchResult.summary.failureCount,
+          totalTime: batchResult.summary.totalExecutionTime
         } : undefined,
         positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
       });
@@ -2871,14 +2860,14 @@ export class ScrollEngine implements ScrollSeamlessController {
         direction: this.options.direction,
         pausedAnimations: pausedAnimations.length,
         continuityIssues,
-        batchOperationSuccess: batchResult?.successfulOperations || 0
+        batchOperationSuccess: batchResult?.summary.successCount || 0
       });
       
     } catch (error) {
       console.error('Enhanced mouse enter handler failed:', error);
       
       // 使用增强的错误处理
-      this.handleError(error, { operation: 'mouseEnter', recovery: 'hoverErrorRecovery' });
+      this.handleError(error instanceof Error ? error : new Error(String(error)), { operation: 'mouseEnter', recovery: 'hoverErrorRecovery' });
       
       // 尝试恢复到一致状态
       this.attemptHoverErrorRecovery();
@@ -2920,8 +2909,7 @@ export class ScrollEngine implements ScrollSeamlessController {
           {
             createSnapshots: true,
             validateContinuity: true,
-            tolerance: 0.5,
-            errorRecovery: true
+            tolerance: 0.5
           }
         );
       } catch (error) {
@@ -2993,16 +2981,16 @@ export class ScrollEngine implements ScrollSeamlessController {
       this.validateResumedAnimationStates(allStates);
       
       // 触发增强的离开事件
-      this.options.onEvent?.('mouseLeave', {
+      this.options.onEvent?.('resume', {
         direction: this.options.direction,
         timestamp: Date.now(),
         hoverStop: true,
         resumedAnimations: resumedAnimations.length,
         continuityIssues,
         batchResult: batchResult ? {
-          successfulOperations: batchResult.successfulOperations,
-          failedOperations: batchResult.failedOperations,
-          totalTime: batchResult.totalTime
+          successfulOperations: batchResult.summary.successCount,
+          failedOperations: batchResult.summary.failureCount,
+          totalTime: batchResult.summary.totalExecutionTime
         } : undefined,
         positionStats: HoverPositionManager.getPositionStats(allStates, this.options.direction)
       });
@@ -3012,14 +3000,14 @@ export class ScrollEngine implements ScrollSeamlessController {
         direction: this.options.direction,
         resumedAnimations: resumedAnimations.length,
         continuityIssues,
-        batchOperationSuccess: batchResult?.successfulOperations || 0
+        batchOperationSuccess: batchResult?.summary.successCount || 0
       });
       
     } catch (error) {
       console.error('Enhanced mouse leave handler failed:', error);
       
       // 使用增强的错误处理
-      this.handleError(error, { operation: 'mouseLeave', recovery: 'intelligentResume' });
+      this.handleError(error instanceof Error ? error : new Error(String(error)), { operation: 'mouseLeave', recovery: 'intelligentResume' });
       
       // 尝试智能恢复
       this.attemptIntelligentResume();
@@ -3273,7 +3261,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       index,
       position: state.position,
       animationId: state.animationId,
-      isPaused: (rafScheduler as any).animations?.get(state.animationId!)?.paused || false,
+      isPaused: this.isAnimationPaused(state.animationId!),
       pausedPosition: state.position, // 暂停时的位置
       content1Transform: state.content1.style.transform,
       content2Transform: state.content2.style.transform,
@@ -3352,71 +3340,7 @@ export class ScrollEngine implements ScrollSeamlessController {
     }
   }
 
-  /**
-   * 尝试悬停错误恢复
-   */
-  private attemptHoverErrorRecovery(): void {
-    try {
-      console.log('Attempting hover error recovery...');
-      
-      // 重置所有动画状态
-      [...this.rowStates, ...this.colStates].forEach(state => {
-        if (state.animationId) {
-          try {
-            // 强制暂停
-            rafScheduler.pause(state.animationId);
-            
-            // 重新冻结变换
-            this.freezeTransformAtCurrentPosition(state, this.options.direction);
-          } catch (stateError) {
-            console.error('State recovery failed:', stateError);
-          }
-        }
-      });
-      
-    } catch (error) {
-      console.error('Hover error recovery failed:', error);
-    }
-  }
 
-  /**
-   * 尝试智能恢复
-   */
-  private attemptIntelligentResume(): void {
-    try {
-      console.log('Attempting intelligent resume...');
-      
-      // 分析当前状态并执行最佳恢复策略
-      const states = [...this.rowStates, ...this.colStates];
-      const pausedStates = states.filter(state => {
-        const animation = (rafScheduler as any).animations?.get(state.animationId!);
-        return animation && animation.paused;
-      });
-      
-      if (pausedStates.length > 0) {
-        // 有暂停的动画，尝试恢复
-        pausedStates.forEach(state => {
-          try {
-            this.validateResumePosition(state, this.options.direction);
-            rafScheduler.resume(state.animationId!);
-            this.synchronizeTransformWithPosition(state, this.options.direction);
-          } catch (stateError) {
-            console.error('Individual state resume failed:', stateError);
-          }
-        });
-      } else {
-        // 没有暂停的动画，可能需要重新启动
-        if (this.shouldScroll()) {
-          setTimeout(() => this.start(), 50);
-        }
-      }
-      
-    } catch (error) {
-      console.error('Intelligent resume failed:', error);
-      // 最后的尝试：强制恢复
-      this.attemptForceResume();
-    }
-  }
 
   /**
    * 捕获暂停前的状态
@@ -3428,7 +3352,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       animationId: state.animationId,
       content1Transform: state.content1.style.transform,
       content2Transform: state.content2.style.transform,
-      isPaused: (rafScheduler as any).animations?.get(state.animationId!)?.paused || false,
+      isPaused: this.isAnimationPaused(state.animationId!),
       timestamp: Date.now()
     }));
   }
@@ -3443,7 +3367,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       animationId: state.animationId,
       content1Transform: state.content1.style.transform,
       content2Transform: state.content2.style.transform,
-      isPaused: (rafScheduler as any).animations?.get(state.animationId!)?.paused || false,
+      isPaused: this.isAnimationPaused(state.animationId!),
       timestamp: Date.now()
     }));
   }
@@ -3469,7 +3393,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       index,
       position: state.position,
       animationId: state.animationId,
-      isPaused: (rafScheduler as any).animations?.get(state.animationId!)?.paused || false,
+      isPaused: this.isAnimationPaused(state.animationId!),
       timestamp: Date.now()
     }));
   }
@@ -3770,7 +3694,7 @@ export class ScrollEngine implements ScrollSeamlessController {
           // 确保动画处于正确状态
           if (state.animationId) {
             // 如果应该暂停但没有暂停，则暂停
-            if (!rafScheduler.isPaused(state.animationId)) {
+            if (!this.isAnimationPaused(state.animationId)) {
               rafScheduler.pause(state.animationId);
             }
           }
@@ -3807,9 +3731,9 @@ export class ScrollEngine implements ScrollSeamlessController {
         try {
           if (state.animationId) {
             // 检查动画是否已经在运行
-            if (rafScheduler.isPaused(state.animationId)) {
+            if (this.isAnimationPaused(state.animationId)) {
               rafScheduler.resume(state.animationId);
-            } else if (!rafScheduler.isScheduled(state.animationId)) {
+            } else if (!this.isAnimationScheduled(state.animationId)) {
               // 如果动画丢失，重新创建
               const newAnimationId = AnimationHelper.generateId('intelligent_resume');
               state.animationId = newAnimationId;
@@ -3832,7 +3756,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
       
       // 触发智能恢复事件
-      this.options.onEvent?.('intelligentResume', {
+      this.options.onEvent?.('resume', {
         direction: this.options.direction,
         timestamp: Date.now(),
         reason: 'mouseLeaveFailure',
@@ -3862,7 +3786,7 @@ export class ScrollEngine implements ScrollSeamlessController {
       });
       
       // 触发强制恢复事件
-      this.options.onEvent?.('forceResume', {
+      this.options.onEvent?.('resume', {
         direction: this.options.direction,
         timestamp: Date.now(),
         reason: 'mouseLeaveFailure'

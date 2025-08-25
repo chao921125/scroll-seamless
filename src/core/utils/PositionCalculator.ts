@@ -516,11 +516,18 @@ export class PositionCalculator {
       return position;
       
     } catch (error) {
-      ErrorHandler.logError('Failed to correct invalid position', {
-        error: error instanceof Error ? error.message : String(error),
-        position,
-        direction
-      });
+      const errorDetails = {
+        code: ScrollDirectionError.POSITION_VALIDATION_FAILED,
+        message: 'Failed to correct invalid position',
+        context: {
+          error: error instanceof Error ? error.message : String(error),
+          position,
+          direction
+        },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
       return 0; // 安全默认值
     }
   }
@@ -762,11 +769,18 @@ export class PositionCalculator {
       return this.applyStandardPreFilling(content1, content2, contentSize, direction);
       
     } catch (error) {
-      ErrorHandler.logError('Content pre-filling failed', {
-        error: error instanceof Error ? error.message : String(error),
-        direction,
-        containerSize
-      });
+      const errorDetails = {
+        code: ScrollDirectionError.CONTENT_SIZE_CALCULATION_FAILED,
+        message: 'Content pre-filling failed',
+        context: {
+          error: error instanceof Error ? error.message : String(error),
+          direction,
+          containerSize
+        },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
       return { success: false, contentSize: 0 };
     }
   }
@@ -939,7 +953,7 @@ export class PositionCalculator {
         content1Rect, content2Rect, containerRect, containerSize, direction
       );
       
-      if (detectionResult.hasBlank) {
+      if (detectionResult.hasBlank && detectionResult.blankType) {
         hasBlankAreas = true;
         
         // 应用修复
@@ -967,7 +981,14 @@ export class PositionCalculator {
       
     } catch (error) {
       const errorMessage = `Blank area detection failed: ${error instanceof Error ? error.message : String(error)}`;
-      ErrorHandler.logError(errorMessage, { direction, currentPosition });
+      const errorDetails = {
+        code: ScrollDirectionError.POSITION_VALIDATION_FAILED,
+        message: errorMessage,
+        context: { direction, currentPosition },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
       errors.push(errorMessage);
       return {
         hasBlankAreas: false,
@@ -1192,10 +1213,17 @@ export class PositionCalculator {
       try {
         config = DirectionHandler.getDirectionConfig(direction);
       } catch (error) {
-        ErrorHandler.logError('Failed to get direction config', {
-          error: error instanceof Error ? error.message : String(error),
-          direction
-        });
+        const errorDetails = {
+          code: ScrollDirectionError.DIRECTION_CHANGE_FAILED,
+          message: 'Failed to get direction config',
+          context: {
+            error: error instanceof Error ? error.message : String(error),
+            direction
+          },
+          timestamp: Date.now(),
+          recoverable: true
+        };
+        ErrorHandler.logError(errorDetails);
         // Return safe defaults
         return {
           content1Transform: 'translateX(0px)',
@@ -1245,12 +1273,19 @@ export class PositionCalculator {
       };
       
     } catch (error) {
-      ErrorHandler.logError('Failed to optimize seamless connection', {
-        error: error instanceof Error ? error.message : String(error),
-        position,
-        contentSize,
-        direction
-      });
+      const errorDetails = {
+        code: ScrollDirectionError.POSITION_VALIDATION_FAILED,
+        message: 'Failed to optimize seamless connection',
+        context: {
+          error: error instanceof Error ? error.message : String(error),
+          position,
+          contentSize,
+          direction
+        },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
       
       // 返回安全的默认值
       const config = DirectionHandler.getDirectionConfig(direction);
@@ -1469,11 +1504,18 @@ export class PositionCalculator {
       return { fixed: true, adjustments };
       
     } catch (error) {
-      ErrorHandler.logError('Failed to fix content gaps', {
-        error: error instanceof Error ? error.message : String(error),
-        direction,
-        currentPosition
-      });
+      const errorDetails = {
+        code: ScrollDirectionError.CONTENT_SIZE_CALCULATION_FAILED,
+        message: 'Failed to fix content gaps',
+        context: {
+          error: error instanceof Error ? error.message : String(error),
+          direction,
+          currentPosition
+        },
+        timestamp: Date.now(),
+        recoverable: true
+      };
+      ErrorHandler.logError(errorDetails);
       
       return { fixed: false };
     }

@@ -13,23 +13,7 @@ export type ScrollSeamlessEvent =
   | 'resume'
   | 'destroy'
   | 'update'
-  | 'cycle'
-  | 'reach-end'
-  | 'reach-start'
   | 'error';
-
-// 事件回调参数类型
-export interface ScrollSeamlessEventPayload {
-  type: ScrollSeamlessEvent;
-  direction: ScrollDirection;
-  position: number;
-  cycleCount?: number;
-  data?: any;
-  error?: string;
-  stack?: string;
-}
-
-
 
 /**
  * 组件 props/options 类型
@@ -63,10 +47,8 @@ export interface ScrollSeamlessController {
   updateData: () => void;
   setOptions: (options: Partial<ScrollSeamlessOptions>) => void;
   isRunning: () => boolean;
-  // 可选：获取当前滚动位置
   getPosition?: () => number;
   setPosition?: (position: number) => void;
-  // 渲染相关
   getRenderMatrix?: () => string[][];
   getTransforms?: () => string[];
 }
