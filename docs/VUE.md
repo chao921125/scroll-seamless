@@ -44,22 +44,7 @@ pnpm add scroll-seamless
         direction="left"
         :step="1"
         :hover-stop="true"
-        v-model="isScrolling"
-      >
-        <template #default="{ item, index }">
-          <div
-            :key="index"
-            style="
-              padding: 10px;
-              margin: 0 5px;
-              background-color: #f0f0f0;
-              border-radius: 4px;
-            "
-          >
-            {{ item }}
-          </div>
-        </template>
-      </ScrollSeamless>
+      />
     </div>
 
     <div>
@@ -70,26 +55,25 @@ pnpm add scroll-seamless
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
-import { ScrollSeamless } from "scroll-seamless/vue";
+<script setup lang="ts">
+import { ref } from "vue"
+import ScrollSeamless, { ScrollSeamlessExpose } from "scroll-seamless"
 
-const scrollRef = ref(null);
-const data = ref(["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]);
-const isScrolling = ref(true);
+const scrollRef = ref<ScrollSeamlessExpose | null>(null)
+const data = ref(["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"])
 
 const startScroll = () => {
-  scrollRef.value?.start();
-};
+  scrollRef.value?.start()
+}
 
 const stopScroll = () => {
-  scrollRef.value?.stop();
-};
+  scrollRef.value?.stop()
+}
 
 const updateScrollData = () => {
-  data.value = [...data.value, "New Item " + (data.value.length + 1)];
-  scrollRef.value?.updateData();
-};
+  data.value = [...data.value, "New Item " + (data.value.length + 1)]
+  scrollRef.value?.update()
+}
 </script>
 ```
 

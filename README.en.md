@@ -49,7 +49,7 @@ const MyComponent = () => {
         data={data}
         direction="right"
         step={1}
-        hoverStop={true}
+        hoverStop={false}
         wheelEnable={true}
         rows={1}
         cols={1}
@@ -171,7 +171,7 @@ const scrollInstance = new ScrollSeamless(container, {
   data: ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"],
   direction: "right",
   step: 1,
-  hoverStop: true,
+  hoverStop: false,
   wheelEnable: true,
   rows: 1,
   cols: 1,
@@ -344,7 +344,7 @@ const CustomScrollDemo = () => {
         data={items}
         direction="right"
         step={0.5}
-        hoverStop={true}
+        hoverStop={false}
       >
         {/* Completely custom content structure */}
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -524,7 +524,7 @@ Scroll Seamless component core styles only ensure functionality (layout, overflo
 | `step` | `number` | `1` | Pixels moved per step |
 | `stepWait` | `number` | `0` | Wait time per step (ms) |
 | `delay` | `number` | `0` | Initial delay time (ms) |
-| `hoverStop` | `boolean` | `true` | Whether to pause on mouse hover |
+| `hoverStop` | `boolean` | `false` | Whether to pause on mouse hover |
 | `wheelEnable` | `boolean` | `false` | Whether to enable wheel control |
 | `custom` | `boolean` | `false` | Whether to use custom content |
 | `plugins` | `ScrollSeamlessPlugin[]` | `[]` | Plugin array |

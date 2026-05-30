@@ -13,7 +13,7 @@
 | stepWait | number | Step wait time (ms) | 0 |
 | delay | number | Animation delay (ms) | 0 |
 | bezier | [number,number,number,number] | Bezier curve | [0.25,0.1,0.25,1] |
-| hoverStop | boolean | Pause on hover | true |
+| hoverStop | boolean | Pause on hover | false |
 | wheelEnable | boolean | Mouse wheel | false |
 | singleLine | boolean | Single line horizontal scroll | false |
 | rows | number | Number of rows | 1 |

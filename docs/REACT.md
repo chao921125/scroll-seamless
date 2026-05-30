@@ -32,10 +32,10 @@ pnpm add scroll-seamless
 
 ```jsx
 import React, { useRef } from "react";
-import { ScrollSeamless } from "scroll-seamless/react";
+import ScrollSeamless, { ScrollSeamlessRef } from "scroll-seamless";
 
 function ScrollDemo() {
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<ScrollSeamlessRef>(null);
   const data = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"];
 
   return (
@@ -46,28 +46,14 @@ function ScrollDemo() {
           data={data}
           direction="left"
           step={1}
-          hoverStop={true}
-        >
-          {(item, index) => (
-            <div
-              key={index}
-              style={{
-                padding: "10px",
-                margin: "0 5px",
-                backgroundColor: "#f0f0f0",
-                borderRadius: "4px",
-              }}
-            >
-              {item}
-            </div>
-          )}
-        </ScrollSeamless>
+          hoverStop={false}
+        />
       </div>
 
       <div>
         <button onClick={() => scrollRef.current?.start()}>开始</button>
         <button onClick={() => scrollRef.current?.stop()}>停止</button>
-        <button onClick={() => scrollRef.current?.updateData()}>更新数据</button>
+        <button onClick={() => scrollRef.current?.update()}>更新数据</button>
       </div>
     </div>
   );
@@ -85,7 +71,7 @@ export default ScrollDemo;
 | `step` | `number` | `1` | 每步移动像素 |
 | `stepWait` | `number` | `0` | 每步等待时间(ms) |
 | `delay` | `number` | `0` | 初始延迟时间(ms) |
-| `hoverStop` | `boolean` | `true` | 鼠标悬停是否暂停 |
+| `hoverStop` | `boolean` | `false` | 鼠标悬停是否暂停 |
 | `wheelEnable` | `boolean` | `false` | 是否启用滚轮控制 |
 | `rows` | `number` | `1` | 行数 |
 | `cols` | `number` | `1` | 列数 |

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2018",
+    "lib": ["ES2018", "DOM"],
     "module": "ESNext",
     "declaration": true,
     "outDir": "dist",
@@ -8,7 +9,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx"
@@ -17,7 +18,9 @@
     "src/core/**/*",
     "src/vue/**/*",
     "src/react/**/*",
+    "src/plugins/**/*",
     "src/types/**/*",
-    "shim.d.ts"
+    "shim.d.ts",
+    "vitest.config.ts"
   ]
 }

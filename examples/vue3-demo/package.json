@@ -1,0 +1,21 @@
+{
+  "name": "scroll-seamless-vue3-demo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.35",
+    "scroll-seamless": "file:../../scroll-seamless-2.0.0.tgz"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.6.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.14",
+    "vue-tsc": "^2.0.0"
+  }
+}

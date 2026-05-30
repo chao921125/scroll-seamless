@@ -6,6 +6,24 @@
 
 > 一个高性能、功能丰富的无缝滚动库，支持 JavaScript、Vue3 和 React，适用于各种滚动展示场景。
 
+## 🎉 v2 版本全新发布！
+
+**Scroll Seamless v2** 是完全重写的版本，带来全新的架构和更强的性能！
+
+### ✨ v2 核心亮点
+
+- 🏗️ **全新架构** - 模块化设计，零耦合工具模块
+- 🚀 **极致性能** - 虚拟滚动支持 10000+ 数据量
+- 🔌 **插件系统** - 热插拔、优先级管理
+- 📦 **多框架支持** - Vue 3 + React + 原生 JS
+- 📝 **完整类型** - TypeScript 全覆盖
+- 🎯 **四向滚动** - left/right/up/down 完美支持
+- 📊 **性能监控** - 实时 FPS、内存监控
+
+**查看 [v2 文档](./docs/API-v2.md) 了解更多信息**
+
+---
+
 ## 简介
 
 Scroll Seamless 是一个专为现代 Web 应用设计的无缝滚动库，提供了流畅的滚动体验和丰富的自定义选项。无论是简单的文本轮播，还是复杂的数据展示，Scroll Seamless 都能满足您的需求。支持多种框架集成，性能优化，以及大数据量处理。
@@ -70,6 +88,93 @@ pnpm add scroll-seamless
 
 ## 使用方法
 
+### 🚀 v2 快速开始
+
+#### 原生 JavaScript
+
+```typescript
+import { ScrollEngine } from 'scroll-seamless/v2/core'
+import { 
+  createVirtualScrollPlugin,
+  createPerformanceMonitorPlugin 
+} from 'scroll-seamless/v2/plugins'
+
+const engine = new ScrollEngine(container, {
+  data: ['Item 1', 'Item 2', 'Item 3'],
+  direction: 'left',
+  step: 2,
+  hoverStop: false
+})
+
+// 使用插件
+const pluginManager = engine.getPluginManager()
+
+pluginManager.register(
+  createVirtualScrollPlugin({ bufferCount: 5 }),
+  5
+)
+
+pluginManager.register(
+  createPerformanceMonitorPlugin({ fps: true }),
+  10
+)
+
+pluginManager.applyAll()
+engine.start()
+```
+
+#### Vue 3
+
+```vue
+<template>
+  <ScrollSeamless
+    v-model:data="items"
+    direction="left"
+    :step="2"
+    :hover-stop="true"
+    :rows="3"
+    @start="onStart"
+  />
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { ScrollSeamless } from 'scroll-seamless/v2/vue'
+
+const items = ref(['Item 1', 'Item 2', 'Item 3'])
+
+function onStart(event) {
+  console.log('Started:', event)
+}
+</script>
+```
+
+#### React
+
+```tsx
+import { useRef } from 'react'
+import { ScrollSeamless } from 'scroll-seamless/v2/react'
+import type { ScrollSeamlessRef } from 'scroll-seamless/v2/react'
+
+function App() {
+  const scrollRef = useRef<ScrollSeamlessRef>(null)
+  const items = ['Item 1', 'Item 2', 'Item 3']
+
+  return (
+    <ScrollSeamless
+      ref={scrollRef}
+      data={items}
+      direction="left"
+      step={2}
+      hoverStop={false}
+      onStart={(event) => console.log('Started:', event)}
+    />
+  )
+}
+```
+
+### 原版本使用
+
 ### React 组件
 
 ```jsx
@@ -87,7 +192,7 @@ const MyComponent = () => {
         data={data}
         direction="right"
         step={1}
-        hoverStop={true}
+        hoverStop={false}
         wheelEnable={true}
         rows={1}
         cols={1}
@@ -211,7 +316,7 @@ const scrollInstance = new ScrollSeamless(container, {
   data: ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"],
   direction: "right",
   step: 1,
-  hoverStop: true,
+  hoverStop: false,
   wheelEnable: true,
   rows: 1,
   cols: 1,

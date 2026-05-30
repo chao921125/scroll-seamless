@@ -1,118 +1,107 @@
 /**
- * 通用对象池实现，用于复用对象以减少垃圾回收
+ * ObjectPool - 对象池
+ * 
+ * 职责：
+ * - 复用DOM元素，减少GC
+ * - 管理对象的创建和回收
+ * - 控制池大小
  */
-export class ObjectPool<T> {
-  private pool: T[] = [];
-  private factory: () => T;
-  private reset: (item: T) => void;
-  private maxSize: number;
-  private created = 0;
 
-  constructor(
-    factory: () => T,
-    reset: (item: T) => void,
-    initialSize = 5,
-    maxSize = 50
-  ) {
-    this.factory = factory;
-    this.reset = reset;
-    this.maxSize = maxSize;
-    
-    // 预创建初始对象
-    for (let i = 0; i < initialSize; i++) {
-      this.pool.push(this.factory());
-      this.created++;
+export class ObjectPool<T extends HTMLElement> {
+  private pool: T[] = [];
+  private minSize: number;
+  private maxSize: number;
+  private createFn: () => T;
+  private resetFn?: (element: T) => void;
+
+  constructor(options: {
+    minSize?: number;
+    maxSize?: number;
+    create: () => T;
+    reset?: (element: T) => void;
+  }) {
+    this.minSize = options.minSize ?? 10;
+    this.maxSize = options.maxSize ?? 100;
+    this.createFn = options.create;
+    this.resetFn = options.reset;
+
+    // 预热对象池
+    this.warmup();
+  }
+
+  /**
+   * 预热对象池
+   */
+  private warmup(): void {
+    for (let i = 0; i < this.minSize; i++) {
+      this.pool.push(this.createFn());
     }
   }
 
   /**
-   * 从池中获取对象
+   * 获取对象
    */
   acquire(): T {
     if (this.pool.length > 0) {
-      return this.pool.pop()!;
+      const element = this.pool.pop()!;
+      
+      // 重置对象状态
+      if (this.resetFn) {
+        this.resetFn(element);
+      }
+      
+      return element;
     }
-    
-    // 池为空时创建新对象
-    this.created++;
-    return this.factory();
+
+    // 池空了，创建新对象
+    return this.createFn();
   }
 
   /**
-   * 将对象归还到池中
+   * 回收对象
    */
-  release(item: T): void {
-    if (this.pool.length < this.maxSize) {
-      this.reset(item);
-      this.pool.push(item);
+  recycle(element: T): void {
+    // 检查池是否已满
+    if (this.pool.length >= this.maxSize) {
+      // 池满，销毁对象
+      if (element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+      return;
     }
-    // 超过最大容量时直接丢弃，让GC回收
+
+    // 重置对象状态
+    if (this.resetFn) {
+      this.resetFn(element);
+    }
+
+    // 回收到池中
+    this.pool.push(element);
   }
 
   /**
-   * 清空池
+   * 获取池大小
+   */
+  getSize(): number {
+    return this.pool.length;
+  }
+
+  /**
+   * 清空对象池
    */
   clear(): void {
-    this.pool.length = 0;
+    this.pool.forEach(element => {
+      if (element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+    });
+    this.pool = [];
   }
 
   /**
-   * 获取池状态
+   * 销毁对象池
    */
-  getStats() {
-    return {
-      poolSize: this.pool.length,
-      totalCreated: this.created,
-      maxSize: this.maxSize
-    };
-  }
-}
-
-/**
- * DOM元素对象池
- */
-export class DOMElementPool {
-  private spanPool: ObjectPool<HTMLSpanElement>;
-  private divPool: ObjectPool<HTMLDivElement>;
-
-  constructor() {
-    this.spanPool = new ObjectPool(
-      () => document.createElement('span'),
-      (span) => {
-        span.className = '';
-        span.textContent = '';
-        span.removeAttribute('style');
-      }
-    );
-
-    this.divPool = new ObjectPool(
-      () => document.createElement('div'),
-      (div) => {
-        div.className = '';
-        div.innerHTML = '';
-        div.removeAttribute('style');
-      }
-    );
-  }
-
-  acquireSpan(): HTMLSpanElement {
-    return this.spanPool.acquire();
-  }
-
-  releaseSpan(span: HTMLSpanElement): void {
-    this.spanPool.release(span);
-  }
-
-  acquireDiv(): HTMLDivElement {
-    return this.divPool.acquire();
-  }
-
-  releaseDiv(div: HTMLDivElement): void {
-    this.divPool.release(div);
-  }
-
-  clear(): void {
-    this.spanPool.clear();
-    this.divPool.clear();
+  destroy(): void {
+    this.clear();
   }
 }
