@@ -53,11 +53,7 @@ pnpm add scroll-seamless
 2. 初始化滚动实例：
 
 ```javascript
-// ESM 方式（推荐）
-import ScrollSeamless from 'scroll-seamless'
-
-// 或 CommonJS 方式
-// const ScrollSeamless = require('scroll-seamless').default
+import { ScrollEngine } from 'scroll-seamless'
 
 // 获取容器元素
 const container = document.getElementById("scroll-container")
@@ -66,30 +62,21 @@ const container = document.getElementById("scroll-container")
 const data = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
 
 // 初始化滚动实例
-const scrollInstance = new ScrollSeamless(container, {
+const scrollInstance = new ScrollEngine(container, {
   data: data,
   direction: "left", // 滚动方向：left, right, up, down
   step: 1, // 每步移动像素
-  hoverStop: false // 鼠标悬停暂停
+  hoverStop: false, // 鼠标悬停暂停
+  autoStart: true // 自动开始
 })
-
-// 开始滚动
-scrollInstance.start()
 ```
 
 ### React
 
-1. 安装依赖：
-
-```bash
-npm install scroll-seamless
-```
-
-2. 在组件中使用：
-
 ```jsx
 import React, { useRef } from "react";
-import ScrollSeamless, { ScrollSeamlessRef } from "scroll-seamless";
+import { ScrollSeamless } from "scroll-seamless/react";
+import type { ScrollSeamlessRef } from "scroll-seamless/react";
 
 function ScrollDemo() {
   const scrollRef = useRef<ScrollSeamlessRef>(null);
@@ -105,6 +92,7 @@ function ScrollDemo() {
           direction="left"
           step={1}
           hoverStop={false}
+          autoStart={true}
         />
       </div>
 
@@ -112,6 +100,8 @@ function ScrollDemo() {
       <div>
         <button onClick={() => scrollRef.current?.start()}>开始</button>
         <button onClick={() => scrollRef.current?.stop()}>停止</button>
+        <button onClick={() => scrollRef.current?.pause()}>暂停</button>
+        <button onClick={() => scrollRef.current?.resume()}>恢复</button>
       </div>
     </div>
   );
@@ -121,14 +111,6 @@ export default ScrollDemo;
 ```
 
 ### Vue
-
-1. 安装依赖：
-
-```bash
-npm install scroll-seamless
-```
-
-2. 在组件中使用：
 
 ```vue
 <template>
@@ -140,7 +122,8 @@ npm install scroll-seamless
         :data="data"
         direction="left"
         :step="1"
-        :hover-stop="true"
+        :hover-stop="false"
+        :auto-start="true"
       />
     </div>
 
@@ -148,15 +131,17 @@ npm install scroll-seamless
     <div>
       <button @click="startScroll">开始</button>
       <button @click="stopScroll">停止</button>
+      <button @click="pauseScroll">暂停</button>
+      <button @click="resumeScroll">恢复</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue"
-import ScrollSeamless, { ScrollSeamlessExpose } from "scroll-seamless"
+import { ScrollSeamless } from "scroll-seamless/vue"
 
-const scrollRef = ref<ScrollSeamlessExpose | null>(null)
+const scrollRef = ref(null)
 const data = ref(["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"])
 
 const startScroll = () => {
@@ -166,51 +151,16 @@ const startScroll = () => {
 const stopScroll = () => {
   scrollRef.value?.stop()
 }
+
+const pauseScroll = () => {
+  scrollRef.value?.pause()
+}
+
+const resumeScroll = () => {
+  scrollRef.value?.resume()
+}
 </script>
 ```
-
-## 导入方式
-
-Scroll Seamless 支持多种导入方式，推荐使用默认导入：
-
-### ESM 方式（推荐）
-
-```javascript
-// 默认导入（与 Vue/React 保持一致）
-import ScrollSeamless from 'scroll-seamless'
-
-// 命名导入
-import { ScrollEngine } from 'scroll-seamless'
-
-// 混合导入
-import ScrollSeamless, { ScrollEngine, ScrollEventType } from 'scroll-seamless'
-```
-
-### CommonJS 方式
-
-```javascript
-// 使用 .default
-const ScrollSeamless = require('scroll-seamless').default
-
-// 或命名导出
-const { ScrollEngine } = require('scroll-seamless')
-```
-
-### Vue 3
-
-```vue
-<script setup lang="ts">
-import ScrollSeamless, { ScrollSeamlessExpose } from 'scroll-seamless'
-</script>
-```
-
-### React
-
-```tsx
-import ScrollSeamless, { ScrollSeamlessRef } from 'scroll-seamless'
-```
-
-> 更多信息请参考 [导入方式指南](../examples/IMPORT-GUIDE.md)
 
 ## 常用配置
 
@@ -239,8 +189,14 @@ scrollInstance.start();
 // 停止滚动
 scrollInstance.stop();
 
+// 暂停滚动
+scrollInstance.pause();
+
+// 恢复滚动
+scrollInstance.resume();
+
 // 更新数据（数据变化后调用）
-scrollInstance.updateData();
+scrollInstance.update();
 
 // 销毁实例（组件卸载时调用）
 scrollInstance.destroy();
@@ -249,13 +205,13 @@ scrollInstance.destroy();
 const position = scrollInstance.getPosition();
 
 // 检查是否正在滚动
-const isRunning = scrollInstance.isRunning();
+const isRunning = scrollInstance.getIsRunning();
 
-// 更新配置选项
-scrollInstance.setOptions({
-  step: 2,
-  direction: "right"
-});
+// 检查是否暂停
+const isPaused = scrollInstance.getIsPaused();
+
+// 获取循环次数
+const cycleCount = scrollInstance.getCycleCount();
 ```
 
 ## 事件监听
@@ -289,71 +245,36 @@ const scrollInstance = new ScrollSeamless(container, {
 ### 多行多列布局
 
 ```javascript
-const scrollInstance = new ScrollSeamless(container, {
+import { ScrollEngine } from 'scroll-seamless'
+
+const scrollInstance = new ScrollEngine(container, {
   data: Array.from({ length: 20 }, (_, i) => `Item ${i + 1}`),
   direction: 'left',
-  rows: 2,
-  cols: 2
-});
-```
-
-### 使用插件
-
-```javascript
-import ScrollSeamless from "scroll-seamless"
-import { createVirtualScrollPlugin } from "scroll-seamless"
-
-// 创建虚拟滚动插件
-const virtualScrollPlugin = createVirtualScrollPlugin({
-  enabled: true,
-  itemWidth: 200,
-  itemHeight: 40,
-  bufferSize: 10
-})
-
-// 使用插件
-const scrollInstance = new ScrollSeamless(container, {
-  data: largeData,
-  plugins: [virtualScrollPlugin]
+  rows: 2,  // 水平滚动时，2行垂直排列
+  cols: 1   // 水平滚动时，cols参数无效
 })
 ```
 
 ### 自定义渲染
 
-在 React 中：
+通过 `renderItem` 选项自定义每个滚动项的渲染方式：
 
-```jsx
-<ScrollSeamless
-  data={data}
-  custom={true}
->
-  <div style={{ display: "flex", gap: "10px" }}>
-    {data.map((item, index) => (
-      <div key={index} className="custom-item">
-        {item}
-      </div>
-    ))}
-  </div>
-</ScrollSeamless>
-```
+```javascript
+import { ScrollEngine } from 'scroll-seamless'
 
-在 Vue 中：
-
-```vue
-<ScrollSeamless
-  :data="data"
-  :custom="true"
->
-  <div style="display: flex; gap: 10px;">
-    <div 
-      v-for="(item, index) in data" 
-      :key="index"
-      class="custom-item"
-    >
-      {{ item }}
-    </div>
-  </div>
-</ScrollSeamless>
+const scrollInstance = new ScrollEngine(container, {
+  data: ['Item 1', 'Item 2', 'Item 3'],
+  direction: 'left',
+  renderItem: (item, index) => {
+    const element = document.createElement('div')
+    element.className = 'custom-item'
+    element.textContent = `${index + 1}: ${item}`
+    element.style.padding = '10px'
+    element.style.margin = '0 5px'
+    element.style.backgroundColor = '#f0f0f0'
+    return element
+  }
+})
 ```
 
 ## 方向示例
@@ -361,107 +282,31 @@ const scrollInstance = new ScrollSeamless(container, {
 ### 所有方向滚动示例
 
 ```javascript
+import { ScrollEngine } from 'scroll-seamless'
+
 // 向左滚动（默认）
-const leftScroll = new ScrollSeamless(container, {
+const leftScroll = new ScrollEngine(container, {
   data: ["项目 1", "项目 2", "项目 3"],
   direction: "left"
 });
 
-// 向右滚动（已修复）
-const rightScroll = new ScrollSeamless(container, {
+// 向右滚动
+const rightScroll = new ScrollEngine(container, {
   data: ["项目 1", "项目 2", "项目 3"],
   direction: "right"
 });
 
-// 向上滚动（已修复空白问题）
-const upScroll = new ScrollSeamless(container, {
+// 向上滚动
+const upScroll = new ScrollEngine(container, {
   data: ["项目 1", "项目 2", "项目 3"],
   direction: "up"
 });
 
-// 向下滚动（已修复）
-const downScroll = new ScrollSeamless(container, {
+// 向下滚动
+const downScroll = new ScrollEngine(container, {
   data: ["项目 1", "项目 2", "项目 3"],
   direction: "down"
 });
-```
-
-### React 中的方向切换
-
-```jsx
-import React, { useState, useRef } from "react";
-import ScrollSeamless, { ScrollSeamlessRef } from "scroll-seamless";
-
-function DirectionDemo() {
-  const scrollRef = useRef<ScrollSeamlessRef>(null);
-  const [direction, setDirection] = useState("left");
-  const data = ["项目 1", "项目 2", "项目 3", "项目 4"];
-
-  const changeDirection = (newDirection) => {
-    setDirection(newDirection);
-    scrollRef.current?.update()
-  };
-
-  return (
-    <div>
-      <div style={{ width: "300px", height: "100px", margin: "20px 0" }}>
-        <ScrollSeamless
-          ref={scrollRef}
-          data={data}
-          direction={direction}
-          step={1}
-          hoverStop={false}
-        />
-      </div>
-
-      <div>
-        <button onClick={() => changeDirection("left")}>向左</button>
-        <button onClick={() => changeDirection("right")}>向右</button>
-        <button onClick={() => changeDirection("up")}>向上</button>
-        <button onClick={() => changeDirection("down")}>向下</button>
-      </div>
-    </div>
-  );
-}
-```
-
-### Vue 中的方向切换
-
-```vue
-<template>
-  <div>
-    <div style="width: 300px; height: 100px; margin: 20px 0;">
-      <ScrollSeamless
-        ref="scrollRef"
-        :data="data"
-        :direction="direction"
-        :step="1"
-        :hover-stop="true"
-      />
-    </div>
-
-    <div>
-      <button @click="changeDirection('left')">向左</button>
-      <button @click="changeDirection('right')">向右</button>
-      <button @click="changeDirection('up')">向上</button>
-      <button @click="changeDirection('down')">向下</button>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref } from "vue"
-import ScrollSeamless, { ScrollSeamlessExpose } from "scroll-seamless"
-
-const scrollRef = ref<ScrollSeamlessExpose | null>(null)
-const direction = ref("left")
-const data = ref(["项目 1", "项目 2", "项目 3", "项目 4"])
-
-const changeDirection = (newDirection: string) => {
-  direction.value = newDirection
-  scrollRef.value?.update()
-}
-</script>
 ```
 
 更多高级用法，请参考 [API 文档](./API.md)。

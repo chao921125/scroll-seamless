@@ -64,17 +64,19 @@
 | --- | --- | --- | --- |
 | `start()` | - | `void` | 开始滚动，如果已经在滚动则不执行任何操作 |
 | `stop()` | - | `void` | 停止滚动，如果已经停止则不执行任何操作 |
+| `pause()` | - | `void` | 暂停滚动，保持当前状态 |
+| `resume()` | - | `void` | 恢复滚动，从暂停状态继续 |
 | `destroy()` | - | `void` | 销毁实例，清理所有资源，包括DOM元素、事件监听器和插件 |
-| `updateData()` | - | `void` | 更新数据并重新渲染，当数据变化后调用此方法刷新显示 |
-| `setOptions(options)` | `Partial<ScrollSeamlessOptions>` | `void` | 设置选项，可以动态更新部分或全部配置参数 |
+| `update()` | - | `void` | 更新数据并重新渲染，当数据变化后调用此方法刷新显示 |
 | `getPosition()` | - | `number` | 获取当前滚动位置（像素值） |
 | `setPosition(position)` | `number` | `void` | 设置当前滚动位置（像素值） |
-| `isRunning()` | - | `boolean` | 获取当前是否正在滚动 |
-| `addPlugin(plugin)` | `ScrollSeamlessPlugin` | `void` | 动态添加插件 |
-| `removePlugin(pluginId)` | `string` | `void` | 根据ID移除插件 |
+| `getIsRunning()` | - | `boolean` | 获取当前是否正在滚动 |
+| `getIsPaused()` | - | `boolean` | 获取当前是否暂停 |
 | `getPerformance()` | - | `PerformanceMetrics` | 获取性能指标数据 |
-| `getRenderMatrix()` | - | `string[][]` | 获取渲染矩阵（用于数据驱动模式） |
-| `getTransforms()` | - | `string[]` | 获取变换样式（用于数据驱动模式） |
+| `getCycleCount()` | - | `number` | 获取循环次数 |
+| `getOptions()` | - | `Readonly<RequiredOptions>` | 获取当前配置选项 |
+| `on(type, callback)` | `ScrollEventType, EventCallback` | `void` | 注册事件监听器 |
+| `off(type, callback)` | `ScrollEventType, EventCallback` | `void` | 移除事件监听器 |
 
 ### 方法详细说明
 
